@@ -316,28 +316,20 @@ const AIAssistant = () => {
         setInput(''); setIsLoading(true);
 
         try {
-            const modelsResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-            if (!modelsResponse.ok) throw new Error("Invalid API Key or connection issue.");
-            
-            const modelsData = await modelsResponse.json();
-            
-            // FIX: Aggressively lock onto the 1.5 models. Completely ignores 2.0 and 2.5!
-            const validModels = modelsData.models.filter(m => 
-                m.supportedGenerationMethods?.includes("generateContent") && 
-                m.name.includes("gemini") &&
-                m.name.includes("1.5")
-            );
-
-            if (validModels.length === 0) throw new Error("API key lacks access to Gemini 1.5 free-tier models.");
-
-            let selectedModel = validModels.find(m => m.name.includes("flash"))?.name || validModels[0].name;
-
+            // FIX: We are completely removing Auto-Discovery. 
+            // We hardcode the exact, verified free-tier model URL directly.
             const payload = { contents: [{ parts: [{ text: "You are a helpful, knowledgeable worship leader assistant for the Bethsaida Music Team. Recommend traditional hymns based on this request: " + userText }] }] };
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(payload)
             });
 
-            if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error?.message || `Error ${response.status}`); }
+            if (!response.ok) { 
+                const errorData = await response.json(); 
+                throw new Error(errorData.error?.message || `Error ${response.status}`); 
+            }
 
             const data = await response.json();
             if (data.candidates?.length > 0) setMessages(prev => [...prev, { role: 'model', text: data.candidates[0].content.parts[0].text }]);
@@ -354,7 +346,7 @@ const AIAssistant = () => {
         <div className="flex flex-col h-[70vh] md:h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center">
                 <div className="bg-amber-500 text-slate-900 p-2 rounded-lg mr-3 shadow-md"><IconMessageSquare /></div>
-                <div><h2 className="text-xl font-bold font-serif">Music Team Assistant</h2><p className="text-amber-200 text-xs">Powered by AI Auto-Discovery</p></div>
+                <div><h2 className="text-xl font-bold font-serif">Music Team Assistant</h2><p className="text-amber-200 text-xs">Powered by AI</p></div>
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
