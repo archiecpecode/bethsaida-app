@@ -305,7 +305,7 @@ const AIAssistant = () => {
     const messagesEndRef = useRef(null);
 
     // SECURELY FETCH KEY FROM VITE ENVIRONMENT VARIABLES
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY; 
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY; 
 
     useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isLoading]);
 
@@ -316,14 +316,20 @@ const AIAssistant = () => {
         setInput(''); setIsLoading(true);
 
         try {
-            // FIX: We are completely removing Auto-Discovery. 
-            // We hardcode the exact, verified free-tier model URL directly.
-            const payload = { contents: [{ parts: [{ text: "You are a helpful, knowledgeable worship leader assistant for the Bethsaida Music Team. Recommend traditional hymns based on this request: " + userText }] }] };
-            
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(payload)
+            // SWITCHED TO GROQ API USING Llama 3
+            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "llama3-8b-8192", // Fast, highly capable, free model
+                    messages: [
+                        { role: "system", content: "You are a helpful worship leader assistant for the Bethsaida Music Team. Keep responses concise and focused on traditional Christian hymns." },
+                        { role: "user", content: "Recommend traditional hymns based on this request: " + userText }
+                    ]
+                })
             });
 
             if (!response.ok) { 
@@ -332,8 +338,12 @@ const AIAssistant = () => {
             }
 
             const data = await response.json();
-            if (data.candidates?.length > 0) setMessages(prev => [...prev, { role: 'model', text: data.candidates[0].content.parts[0].text }]);
-            else setMessages(prev => [...prev, { role: 'model', text: "I'm sorry, I couldn't process that request right now." }]);
+            
+            if (data.choices && data.choices.length > 0) {
+                setMessages(prev => [...prev, { role: 'model', text: data.choices[0].message.content }]);
+            } else {
+                setMessages(prev => [...prev, { role: 'model', text: "I'm sorry, I couldn't process that request right now." }]);
+            }
         } catch (error) {
             console.error("AI Error:", error);
             setMessages(prev => [...prev, { role: 'model', text: `System Error: ${error.message}` }]);
@@ -346,7 +356,7 @@ const AIAssistant = () => {
         <div className="flex flex-col h-[70vh] md:h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center">
                 <div className="bg-amber-500 text-slate-900 p-2 rounded-lg mr-3 shadow-md"><IconMessageSquare /></div>
-                <div><h2 className="text-xl font-bold font-serif">Music Team Assistant</h2><p className="text-amber-200 text-xs">Powered by AI</p></div>
+                <div><h2 className="text-xl font-bold font-serif">Music Team Assistant</h2><p className="text-amber-200 text-xs">Powered by Llama 3 AI</p></div>
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
