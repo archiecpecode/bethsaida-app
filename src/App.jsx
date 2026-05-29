@@ -321,21 +321,16 @@ const AIAssistant = () => {
             
             const modelsData = await modelsResponse.json();
             
-            // FIX: Explicitly ban ANY '2.5' or 'experimental' models which Google gives 0 quota to!
+            // FIX: Aggressively lock onto the 1.5 models. Completely ignores 2.0 and 2.5!
             const validModels = modelsData.models.filter(m => 
                 m.supportedGenerationMethods?.includes("generateContent") && 
                 m.name.includes("gemini") &&
-                !m.name.includes("2.5") &&
-                !m.name.includes("exp")
+                m.name.includes("1.5")
             );
 
-            if (validModels.length === 0) throw new Error("API key lacks generation access to standard free models.");
+            if (validModels.length === 0) throw new Error("API key lacks access to Gemini 1.5 free-tier models.");
 
-            // FIX: Prioritize standard 1.5 flash, then 1.0 pro
-            let selectedModel = validModels.find(m => m.name === "models/gemini-1.5-flash")?.name 
-                             || validModels.find(m => m.name.includes("1.5-flash"))?.name 
-                             || validModels.find(m => m.name.includes("1.0-pro"))?.name 
-                             || validModels[0].name;
+            let selectedModel = validModels.find(m => m.name.includes("flash"))?.name || validModels[0].name;
 
             const payload = { contents: [{ parts: [{ text: "You are a helpful, knowledgeable worship leader assistant for the Bethsaida Music Team. Recommend traditional hymns based on this request: " + userText }] }] };
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`, {
