@@ -316,7 +316,7 @@ const AIAssistant = () => {
         setInput(''); setIsLoading(true);
 
         try {
-            // SWITCHED TO GROQ API USING Llama 3
+            // SWITCHED TO GROQ API USING THE UPDATED LLAMA 3.3 MODEL
             const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -324,7 +324,7 @@ const AIAssistant = () => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    model: "llama3-8b-8192", // Fast, highly capable, free model
+                    model: "llama-3.3-70b-versatile", // UPDATED: The currently active and supported Llama model on Groq
                     messages: [
                         { role: "system", content: "You are a helpful worship leader assistant for the Bethsaida Music Team. Keep responses concise and focused on traditional Christian hymns." },
                         { role: "user", content: "Recommend traditional hymns based on this request: " + userText }
@@ -356,7 +356,7 @@ const AIAssistant = () => {
         <div className="flex flex-col h-[70vh] md:h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center">
                 <div className="bg-amber-500 text-slate-900 p-2 rounded-lg mr-3 shadow-md"><IconMessageSquare /></div>
-                <div><h2 className="text-xl font-bold font-serif">Music Team Assistant</h2><p className="text-amber-200 text-xs">Powered by Llama 3 AI</p></div>
+                <div><h2 className="text-xl font-bold font-serif">Music Team Assistant</h2><p className="text-amber-200 text-xs">Powered by Llama 3.3 AI</p></div>
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
