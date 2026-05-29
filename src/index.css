@@ -1,0 +1,13 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; }
+.hymn-lyrics { white-space: pre-wrap; font-family: 'Georgia', serif; line-height: 2; }
+.chord { color: #d97706; font-weight: bold; font-family: 'Courier New', monospace; font-size: 0.9em; position: relative; top: -0.5em; margin-right: 0.2em; display: inline-block; }
+.paper-bg { background-color: #fcfbf9; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
