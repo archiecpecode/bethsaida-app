@@ -304,7 +304,6 @@ const AIAssistant = () => {
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
 
-    // SECURELY FETCH KEY FROM VITE ENVIRONMENT VARIABLES
     const apiKey = import.meta.env.VITE_GROQ_API_KEY; 
 
     useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isLoading]);
@@ -316,17 +315,13 @@ const AIAssistant = () => {
         setInput(''); setIsLoading(true);
 
         try {
-            // SWITCHED TO GROQ API USING THE UPDATED LLAMA 3.3 MODEL
             const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${apiKey}`,
-                    "Content-Type": "application/json"
-                },
+                headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    model: "llama-3.3-70b-versatile", // UPDATED: The currently active and supported Llama model on Groq
+                    model: "llama-3.3-70b-versatile",
                     messages: [
-                        { role: "system", content: "You are a helpful worship leader assistant for the Bethsaida Music Team. Keep responses concise and focused on traditional Christian hymns." },
+                        { role: "system", content: "You are a worship leader assistant. Keep responses focused on traditional Christian hymns." },
                         { role: "user", content: "Recommend traditional hymns based on this request: " + userText }
                     ]
                 })
@@ -338,12 +333,8 @@ const AIAssistant = () => {
             }
 
             const data = await response.json();
-            
-            if (data.choices && data.choices.length > 0) {
-                setMessages(prev => [...prev, { role: 'model', text: data.choices[0].message.content }]);
-            } else {
-                setMessages(prev => [...prev, { role: 'model', text: "I'm sorry, I couldn't process that request right now." }]);
-            }
+            if (data.choices?.length > 0) setMessages(prev => [...prev, { role: 'model', text: data.choices[0].message.content }]);
+            else setMessages(prev => [...prev, { role: 'model', text: "I'm sorry, I couldn't process that request right now." }]);
         } catch (error) {
             console.error("AI Error:", error);
             setMessages(prev => [...prev, { role: 'model', text: `System Error: ${error.message}` }]);
@@ -356,7 +347,7 @@ const AIAssistant = () => {
         <div className="flex flex-col h-[70vh] md:h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center">
                 <div className="bg-amber-500 text-slate-900 p-2 rounded-lg mr-3 shadow-md"><IconMessageSquare /></div>
-                <div><h2 className="text-xl font-bold font-serif">Music Team Assistant</h2><p className="text-amber-200 text-xs">Powered by Llama 3.3 AI</p></div>
+                <div><h2 className="text-xl font-bold font-serif">Music Team Assistant</h2><p className="text-amber-200 text-xs">Powered by Llama 3.3</p></div>
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
@@ -417,27 +408,23 @@ export default function App() {
     );
 
     return (
-        <div className="flex h-screen bg-slate-100 font-sans text-slate-800">
-            <div className="w-16 md:w-64 bg-slate-900 text-slate-200 flex flex-col p-4 shadow-xl z-10">
-                <div className="mb-8 hidden md:block">
-                    <h1 className="text-xl font-bold font-serif text-white tracking-wide">Bethsaida</h1>
-                    <p className="text-amber-500 text-xs uppercase tracking-widest font-bold mt-1">Music Team</p>
-                </div>
-                <div className="mb-8 md:hidden flex justify-center text-amber-500"><IconMusic /></div>
-                
-                <nav className="flex-1">
-                    <NavItem id="library" label="Hymn Library" icon={IconMusic} />
-                    <NavItem id="program" label="Service Program" icon={IconList} />
-                    <NavItem id="ai" label="AI Assistant" icon={IconMessage} />
-                </nav>
-                
-                <div className="mt-auto hidden md:block pb-4 text-xs text-slate-500 text-center">Vite + React Build</div>
-            </div>
-
-            <div className="flex-1 p-4 md:p-6 overflow-hidden">
+        <div className="flex flex-col h-screen bg-slate-100 font-sans text-slate-800">
+            <div className="flex-1 p-2 md:p-6 overflow-hidden mb-16 md:mb-0">
                 {activeTab === 'library' && <HymnLibrary addToProgram={handleAddToProgram} programType={programType} />}
                 {activeTab === 'program' && <ProgramBuilder programs={programs} setPrograms={setPrograms} programType={programType} setProgramType={setProgramType} navigateToLibrary={() => setActiveTab('library')} />}
                 {activeTab === 'ai' && <AIAssistant />}
+            </div>
+
+            <div className="fixed bottom-0 w-full bg-slate-900 text-slate-200 flex md:flex-col md:w-64 md:h-screen md:relative p-2 md:p-4 shadow-xl z-50">
+                <div className="mb-4 hidden md:block">
+                    <h1 className="text-xl font-bold font-serif text-white tracking-wide">Bethsaida</h1>
+                    <p className="text-amber-500 text-xs uppercase tracking-widest font-bold mt-1">Music Team</p>
+                </div>
+                <nav className="flex md:flex-col w-full justify-around md:justify-start">
+                    <NavItem id="library" label="Library" icon={IconMusic} />
+                    <NavItem id="program" label="Program" icon={IconList} />
+                    <NavItem id="ai" label="AI" icon={IconMessage} />
+                </nav>
             </div>
         </div>
     );
