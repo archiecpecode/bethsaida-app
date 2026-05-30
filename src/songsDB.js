@@ -1405,4 +1405,112 @@ Kundi [G]Ikaw
 [G]Mga pagsulay [D]nga miabot
 [Em]Sa Iyong Ngalan [C]mapildi`
   }
+
+  , // <-- Make sure there is a comma after the very last song (Song 50) before pasting this!
+
+  // ==============================
+  // ADDITIONAL TRADITIONAL HYMNS
+  // ==============================
+  {
+    id: 51, title: "Battle Hymn of the Republic", author: "Julia Ward Howe", category: "Hymn", language: "English",
+    lyrics: `[Verse 1]
+Mine [G]eyes have seen the glory of the coming of the Lord;
+He is [C]trampling out the vintage where the grapes of wrath are [G]stored;
+He hath [G]loosed the fateful lightning of His terrible swift [Em]sword;
+His [Am]truth is [D]marching [G]on.
+
+[Chorus]
+[G]Glory! Glory! Hallelujah!
+[C]Glory! Glory! Halle[G]lujah!
+[G]Glory! Glory! Halle[Em]lujah!
+His [Am]truth is [D]marching [G]on.
+
+[Verse 2]
+I have [G]seen Him in the watch-fires of a hundred circling camps;
+They have [C]builded Him an altar in the evening dews and [G]damps;
+I can [G]read His righteous sentence by the dim and flaring [Em]lamps;
+His [Am]day is [D]marching [G]on.`
+  },
+  {
+    id: 52, title: "Because He Lives", author: "Bill & Gloria Gaither", category: "Hymn", language: "English",
+    lyrics: `[Verse 1]
+God sent His [G]son, they called Him [C]Jesus
+He came to [G]love, heal, and for[D]give.
+He lived and [G]died to buy my [C]pardon,
+An empty [G]grave is there to [D]prove my Savior [G]lives.
+
+[Chorus]
+Because He [G]lives, I can face to[C]morrow.
+Because He [G]lives, all fear is [D]gone.
+Because I [G]know He holds the [C]future,
+And life is [G]worth the living [D]just because He [G]lives.
+
+[Verse 2]
+How sweet to [G]hold a newborn [C]baby,
+And feel the [G]pride and joy he [D]gives;
+But greater [G]still the calm as[C]surance,
+This child can [G]face uncertain [D]days because He [G]lives.`
+  },
+  {
+    id: 53, title: "Count Your Blessings", author: "Johnson Oatman Jr.", category: "Hymn", language: "English",
+    lyrics: `[Verse 1]
+When u[G]pon life's billows you are [D]tempest [G]tossed,
+When you are discouraged, thinking [D]all is [G]lost,
+Count your many blessings, name them [C]one by [G]one,
+And it [D]will surprise you what the Lord hath [G]done.
+
+[Chorus]
+[G]Count your blessings, name them [D]one by one;
+[D]Count your blessings, see what God hath [G]done;
+[G]Count your blessings, [C]name them one by one;
+[G]Count your many [D]blessings, see what God hath [G]done.
+
+[Verse 2]
+Are you [G]ever burdened with a [D]load of [G]care?
+Does the cross seem heavy you are [D]called to [G]bear?
+Count your many blessings, every [C]doubt will [G]fly,
+And you [D]will be singing as the days go [G]by.`
+  },
+  {
+    id: 54, title: "Mansions Over The Hilltop", author: "Ira Stanphill", category: "Hymn", language: "English",
+    lyrics: `[Verse 1]
+I'm satis[G]fied with just a [C]cottage be[G]low,
+A little silver and a [A]little [D]gold;
+But in that [G]city where the [C]ransomed will [G]shine,
+I want a gold one that's [D]silver [G]lined.
+
+[Chorus]
+I've got a [C]mansion just over the [G]hilltop,
+In that bright land where we'll never grow [D]old;
+And some day [G]yonder we will [C]never more [G]wander,
+But walk on streets that are [D]purest [G]gold.
+
+[Verse 2]
+Tho' often [G]tempted, tormented and [C]tested
+And, like the [G]prophet, my pillow a [D]stone
+And tho' I [G]find here no permanent [C]dwelling
+I know He'll [G]give me a [D]mansion my [G]own.`
+  },
+  {
+    id: 55, title: "The Lily of The Valley", author: "Charles W. Fry", category: "Hymn", language: "English",
+    lyrics: `[Verse 1]
+I have [G]found a friend in Jesus, He's [C]everything to [G]me,
+He's the [G]fairest of ten thousand to my [D]soul;
+The [G]Lily of the Valley, in [C]Him alone I [G]see
+All I need to cleanse and [D]make me fully [G]whole.
+In [C]sorrow He's my comfort, in [G]trouble He's my stay,
+He [G]tells me every care on Him to [D]roll.
+
+[Chorus]
+He's the [G]Lily of the Valley, the [C]Bright and Morning [G]Star,
+He's the [G]fairest of ten [D]thousand to my [G]soul.
+
+[Verse 2]
+He all [G]my grief has taken, and [C]all my sorrows [G]borne;
+In temp[G]tation He's my strong and mighty [D]tower;
+I have [G]all for Him forsaken, and [C]all my idols [G]torn
+From my heart, and now He [D]keeps me by His [G]power.
+Though [C]all the world forsake me, and [G]Satan tempt me sore,
+Through [G]Jesus I shall safely reach the [D]goal.`
+  }
 ];
