@@ -1512,5 +1512,199 @@ I have [G]all for Him forsaken, and [C]all my idols [G]torn
 From my heart, and now He [D]keeps me by His [G]power.
 Though [C]all the world forsake me, and [G]Satan tempt me sore,
 Through [G]Jesus I shall safely reach the [D]goal.`
+  },
+  // ==============================
+  // BETHSAIDA ORIGINAL CUSTOM SONGS
+  // ==============================
+  {
+    id: 62, title: "Tell It To Jesus", author: "Edmund S. Lorenz", category: "Hymn", language: "English",
+    lyrics: `[Verse 1]
+[G]Are you weary, [C]are you heavy [G]hearted?
+[D]Tell it to Jesus, [G]tell it to Jesus.
+Are you grieving [C]over joys [G]departed?
+[D]Tell it to Jesus [G]alone.
+
+[Chorus]
+[D]Tell it to Jesus, [G]tell it to Jesus,
+[C]He is a [G]friend that's well [D]known.
+[G]You've no other [C]such a friend or [G]brother,
+[G]Tell it to [D]Jesus [G]alone.
+
+[Verse 2]
+[G]Do the tears flow [C]down your cheeks un[G]bidden?
+[D]Tell it to Jesus, [G]tell it to Jesus.
+Have you sins that [C]to men's eyes are [G]hidden?
+[D]Tell it to Jesus [G]alone.
+
+[Verse 3]
+[G]Do you fear the [C]gathering clouds of [G]sorrow?
+[D]Tell it to Jesus, [G]tell it to Jesus.
+Are you anxious [C]what shall be to[G]morrow?
+[D]Tell it to Jesus [G]alone.
+
+[Verse 4]
+[G]Are you troubled [C]at the thought of [G]dying?
+[D]Tell it to Jesus, [G]tell it to Jesus.
+For Christ's coming [C]kingdom are you [G]sighing?
+[D]Tell it to Jesus [G]alone.`
+  },
+  {
+    id: 63, title: "Glory To His Name", author: "E.A. Hoffman", category: "Hymn", language: "English",
+    lyrics: `[Verse 1]
+[G]Down at the cross where my [C]Savior died,
+[G]down where for cleansing from sin I [D]cried;
+[G]There to my heart was the [C]blood applied;
+[G]Glory to [D]His [G]Name!
+
+[Chorus]
+[C]Glory to His na-a-ame, [G]glory to His [D]na-a-ame!
+[G]There to my heart was the [C]blood applied;
+[G]Glory to [D]His [G]name!
+
+[Verse 2]
+[G]I am so wondrously [C]saved from sin,
+[G]Jesus so sweetly a[D]bides within;
+[G]There at the cross where He [C]took me in;
+[G]Glory to [D]His [G]Name!
+
+[Verse 3]
+[G]Oh, precious fountain that [C]saves from sin,
+[G]I am so glad I have [D]entered in;
+[G]There Jesus saves me and [C]keeps me clean;
+[G]Glory to [D]His [G]Name!
+
+[Verse 4]
+[G]Come to this fountain so [C]rich and sweet,
+[G]Cast thy poor soul at the [D]Savior's feet;
+[G]Plunge in today, and be [C]made complete;
+[G]Glory to [D]His [G]Name!`
+  },
+  {
+    id: 64, title: "Seven Fold Amen", author: "Traditional", category: "Hymn", language: "English",
+    lyrics: `[A]A-------[D]men
+[A]-------[E]men
+[A]-------[F#m]men
+[A]A...a...a..aa.a.[A7]a..[E]men [D]
+[C#m]A...men
+[D]A....men
+[Esus]A........[E]men [A]`
+  },
+  {
+    id: 65, title: "I Have Decided To Follow Jesus", author: "Traditional", category: "Hymn", language: "English",
+    lyrics: `[Verse 1]
+[C]I have decided to follow Jesus; [C7]
+[F]I have decided to follow [C]Jesus;
+[C]I have decided to follow [Am]Jesus;
+[C]No turning back, [G]no [G7]turning [C]back.
+
+[Verse 2]
+[C]Though none go with me, still I will follow; [C7]
+[F]Though none go with me, still I will [C]follow;
+[C]Though none go with me, still I will [Am]follow;
+[C]No turning back, [G]no [G7]turning [C]back.
+
+[Verse 3]
+[C]The world behind me, the cross before me; [C7]
+[F]The world behind me, the cross be[C]fore me;
+[C]The world behind me, the cross be[Am]fore me;
+[C]No turning back, [G]no [G7]turning [C]back.`
+  },
+  {
+    id: 66, title: "Follow On", author: "W.O. Cushing", category: "Hymn", language: "English",
+    lyrics: `[Verse 1]
+[G]Down in the valley with my Savior I [C]would go,
+[G]Where the flowers are blooming and the [Em]sweet waters [D]flow; [D7]
+[G]Everywhere He leads me I would [C]follow, follow [G]on,
+[G]Walking in His footsteps till the [D]crown be [G]won.
+
+[Chorus]
+[G]Follow! follow! I would follow Je - [C]sus! [C/G]
+[G]Anywhere, everywhere, I would follow on! [Em] [A] [D]
+[G]Follow! follow! I would follow Je - [C]sus! [C/G]
+[G]Everywhere He leads me I would [D]follow [G]on!
+
+[Verse 2]
+[G]Down in the valley with my Savior I [C]would go,
+[G]Where the storms are sweeping and the [Em]dark waters [D]flow; [D7]
+[G]With His hand to lead me I will [C]never, never [G]fear,
+[G]Dangers cannot fright me if my [D]Lord is [G]near.
+
+[Verse 3]
+[G]Down in the valley, or upon the [C]mountain steep,
+[G]Close beside my Savior would my [Em]soul ever [D]keep; [D7]
+[G]He will lead me safely in the [C]path that He has [G]trod,
+[G]Up to where they gather on the [D]hills of [G]God.`
+  },
+  {
+    id: 68, title: "Our Best", author: "Traditional", category: "Hymn", language: "English",
+    lyrics: `[Verse 1]
+[A]Hear ye the Master's call, [D]"Give Me thy [A]best!"
+[E7]For, be it [A]great or small, [E]that [B7]is His [E7]test.
+[A]Do then the [A7]best you can, [D]not for reward,
+[Dm]Not for the [A]praise of men, [D]but [E7]for the [A]Lord.
+
+[Chorus]
+[E7]Every work for [A]Jesus [D]will be [A]blest,
+[E7]But He asks from [F#m]everyone his [C#]best.
+[A]Our talents [A7]may be few, these may be [D]small,
+[Dm]But unto [A]Him is due [D]our [E7]best, our [A]all.
+
+[Verse 2]
+[A]Wait not for men to laud, [D]heed not their [A]slight;
+[E7]Winning the [A]smile of God [E]brings [B7]its de[E7]light!
+[A]Aiding the [A7]good and true [D]ne'er goes unblest,
+[Dm]All that we [A]think or do, [D]be [E7]it the [A]best.
+
+[Verse 3]
+[A]Night soon comes on apace, [D]day hastens [A]by;
+[E7]Workman and [A]work must face [E]test[B7]ing on [E7]high.
+[A]Oh, may we [A7]in that day [D]find rest, sweet rest,
+[Dm]Which God has [A]promised those [D]who [E7]do their [A]best.`
+  },
+  {
+    id: 69, title: "Sanctuary", author: "John W. Thompson & Randy Scruggs", category: "Contemporary", language: "English",
+    lyrics: `Intro: [D] [A] [G] [D] [A]
+
+[Chorus]
+[D]Lord prepare me, to be a sanctu[A]ary
+[G]Pure and holy, tried and [D]true [A]
+[D]With thanksgiving, I'll be a liv[A]ing
+[G]Sanctuary, [F#]for [E]You [D]`
+  },
+  {
+    id: 70, title: "Kumusta Lamano & Birthday Medley", author: "Traditional", category: "Hymn", language: "Cebuano",
+    lyrics: `[Verse 1]
+[D]Pagka-anindot ning adlawa
+[D]Ka-malipayon nga naghi-usa
+[D]Mga Anak sa Dios
+[D]Naga-kasadya [A]
+[Em]Ka-malipayon sa Imong panag[A]way
+[Em]Ka-masanagon gayod sa kanu[A]nay
+[Em]Ang Himaya gayod sa Dios Magali[A]pay [D7]
+
+[Chorus]
+[G]Oh, Kumusta, Pagaksa ko Higa[A]la
+[F#m]Kay labihan gayod nakong minga[Bm]wa
+[Em]Sa kadugay sa panahon [A]nga wa ta nagka-kita [D] [D7]
+[G]Oh, Kumusta, Pagaksa ko Higa[A]la
+[F#m]Kay labihan gayod nakong lipa[Bm]ya
+[Em]Usa ragyod ta sa [A]lawas ni Kris[D]to
+
+HAPPY BIRTHDAY
+[G]H [D]B [D]TO [D]YOU
+[G]H [D]B [D]TO [D]YOU
+[G]H [D]B [G7]D, [C]H [Cm]B [D]D
+[G]H [D]B [D]TO [D]YOU
+
+[Refrain]
+[G]Sweeter as the years go [C]by,
+[D]Sweeter as the years go [G]by;
+[G]Richer, fuller, [G7]deeper,
+[C]Jesus' love is [Cm]sweeter,
+[D]Sweeter as the years go [D7]by. [G]`
+  },
+  {
+    id: 71, title: "Threefold Amen", author: "Traditional", category: "Hymn", language: "English",
+    lyrics: `[G]A-[C]men, [G]A-[D]men, [C]A-[G]men.`
   }
 ];
