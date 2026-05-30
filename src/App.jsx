@@ -74,11 +74,11 @@ const HymnLibrary = ({ addToProgram, programType }) => {
     // NEW: State for Traditional vs Contemporary Tabs
     const [activeCategory, setActiveCategory] = useState('Hymn');
 
-    // Filter using the new songsDB, category, and search term
+    // Filter AND ALPHABETIZE using the new songsDB, category, and search term
     const filteredHymns = songsDB.filter(h => 
         h.category === activeCategory &&
         (h.title.toLowerCase().includes(search.toLowerCase()) || h.lyrics.toLowerCase().includes(search.toLowerCase()))
-    );
+    ).sort((a, b) => a.title.localeCompare(b.title));
 
     const handleAddToProgram = (section) => { addToProgram(section, { ...selectedHymn, transpose }); setShowAddModal(false); };
 
