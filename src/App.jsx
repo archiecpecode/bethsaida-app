@@ -33,31 +33,44 @@ function transposeChord(chord, steps) {
 }
 
 // --- COMPONENTS ---
+
+// UPDATED: Ultimate Guitar Style Chords (Stacked above lyrics)
 const HymnRenderer = ({ lyrics, transposeSteps }) => {
     const lines = lyrics.split('\n');
     return (
-        <div className="hymn-lyrics text-slate-800 text-lg">
+        <div className="hymn-lyrics text-slate-800 text-lg font-sans">
             {lines.map((line, i) => {
-                if (line.trim() === '') return <br key={i} />;
-                const parts = [];
-                let currentText = '';
-                let j = 0;
-                while (j < line.length) {
-                    if (line[j] === '[') {
-                        if (currentText) { parts.push({ type: 'text', content: currentText }); currentText = ''; }
-                        let chordEnd = line.indexOf(']', j);
-                        if (chordEnd !== -1) {
-                            const originalChord = line.substring(j + 1, chordEnd);
+                if (line.trim() === '') return <div key={i} className="h-6"></div>; // Empty line spacer
+                
+                const parts = line.split('[');
+                const segments = [];
+                
+                parts.forEach((part, idx) => {
+                    if (idx === 0) {
+                        if (part) segments.push({ chord: '', text: part });
+                    } else {
+                        const closeIdx = part.indexOf(']');
+                        if (closeIdx !== -1) {
+                            const originalChord = part.substring(0, closeIdx);
+                            const text = part.substring(closeIdx + 1);
                             const transposed = transposeSteps !== 0 ? transposeChord(originalChord, transposeSteps) : originalChord;
-                            parts.push({ type: 'chord', content: transposed });
-                            j = chordEnd + 1;
-                        } else { currentText += line[j]; j++; }
-                    } else { currentText += line[j]; j++; }
-                }
-                if (currentText) parts.push({ type: 'text', content: currentText });
+                            segments.push({ chord: transposed, text: text });
+                        } else {
+                            segments.push({ chord: '', text: '[' + part });
+                        }
+                    }
+                });
+
                 return (
-                    <div key={i} className="mb-2 leading-loose">
-                        {parts.map((part, idx) => part.type === 'chord' ? <span key={idx} className="chord text-amber-600 font-bold bg-amber-50 px-1 rounded mr-1">{part.content}</span> : <span key={idx}>{part.content}</span> )}
+                    <div key={i} className="flex flex-wrap items-end mb-3">
+                        {segments.map((seg, idx) => (
+                            <div key={idx} className="flex flex-col">
+                                {/* Chord on top, min-height ensures alignment even if there is no chord */}
+                                <span className="text-amber-600 font-bold text-sm min-h-[1.25rem]">{seg.chord}</span>
+                                {/* Text on bottom, whitespace-pre keeps exact spacing intact */}
+                                <span className="whitespace-pre text-lg">{seg.text}</span>
+                            </div>
+                        ))}
                     </div>
                 );
             })}
@@ -81,8 +94,6 @@ const HymnLibrary = ({ addToProgram, programType }) => {
 
     return (
         <div className="flex flex-col md:flex-row gap-6 h-full relative">
-            
-            {/* MOBILE FIX: The List Pane hides when a song is selected on mobile */}
             <div className={`w-full md:w-1/3 flex-col bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-full ${selectedHymn ? 'hidden md:flex' : 'flex'}`}>
                 <div className="p-4 border-b border-slate-200 bg-slate-50 shrink-0">
                     <div className="flex bg-slate-200 p-1 rounded-lg mb-3">
@@ -122,12 +133,10 @@ const HymnLibrary = ({ addToProgram, programType }) => {
                 </div>
             </div>
 
-            {/* MOBILE FIX: The Details Pane hides when NO song is selected on mobile */}
             <div className={`w-full md:w-2/3 bg-white border border-slate-200 rounded-xl flex-col shadow-sm h-full overflow-hidden ${!selectedHymn ? 'hidden md:flex' : 'flex'}`}>
                 {selectedHymn ? (
                     <>
                         <div className="p-4 md:p-6 border-b border-slate-200 bg-slate-900 text-white flex flex-col justify-between shrink-0">
-                            {/* MOBILE ONLY BACK BUTTON */}
                             <button 
                                 onClick={() => setSelectedHymn(null)} 
                                 className="md:hidden mb-4 text-amber-400 text-sm font-bold flex items-center w-max"
@@ -339,6 +348,10 @@ const AIAssistant = () => {
         setInput(''); setIsLoading(true);
 
         try {
+            if (!apiKey) {
+                throw new Error("API Key is missing! Did you forget to add your .env file before building?");
+            }
+
             const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -436,7 +449,9 @@ export default function App() {
                     <NavItem id="program" label="Service Program" icon={IconList} />
                     <NavItem id="ai" label="AI Assistant" icon={IconMessage} />
                 </nav>
-                <div className="mt-auto pb-4 text-xs text-slate-500 text-center">Vite + React Build</div>
+                
+                {/* UPDATED FOOTER WITH YOUR NAME */}
+                <div className="mt-auto pb-4 text-xs text-slate-500 text-center font-bold tracking-wide">Created by Archie Abona</div>
             </div>
 
             {/* MOBILE TOP HEADER (Hidden on Desktop) */}
