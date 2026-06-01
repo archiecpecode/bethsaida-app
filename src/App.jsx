@@ -34,6 +34,51 @@ function transposeChord(chord, steps) {
 
 // --- COMPONENTS ---
 
+// NEW: SPLASH SCREEN ANIMATION
+const SplashScreen = () => (
+    <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50">
+        <style>
+            {`
+            @keyframes logoReveal {
+                0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+                100% { opacity: 1; transform: scale(1) translateY(0); }
+            }
+            @keyframes lineExpand {
+                0% { width: 0px; opacity: 0; }
+                100% { width: 96px; opacity: 0.8; }
+            }
+            @keyframes fadeUpText {
+                0% { opacity: 0; transform: translateY(10px); }
+                100% { opacity: 1; transform: translateY(0); }
+            }
+            .animate-logo {
+                animation: logoReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            .animate-line {
+                animation: lineExpand 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+                width: 0px;
+            }
+            .animate-sub {
+                animation: fadeUpText 1s ease-out 0.8s forwards;
+                opacity: 0;
+            }
+            `}
+        </style>
+        <div className="animate-logo flex flex-col items-center">
+            <div className="bg-slate-800 p-4 rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.15)] mb-6">
+                <IconMusic className="w-12 h-12 text-amber-500" />
+            </div>
+            <h1 className="text-5xl md:text-6xl font-bold font-serif text-white tracking-wide mb-3">
+                Bethsaida
+            </h1>
+            <div className="animate-line h-1 bg-amber-500 rounded-full mb-4"></div>
+            <p className="animate-sub text-amber-400 text-xs md:text-sm uppercase tracking-[0.3em] font-bold">
+                Music Team
+            </p>
+        </div>
+    </div>
+);
+
 // UPDATED: Ultimate Guitar Style Chords (Stacked above lyrics)
 const HymnRenderer = ({ lyrics, transposeSteps }) => {
     const lines = lyrics.split('\n');
@@ -409,12 +454,20 @@ const AIAssistant = () => {
 };
 
 export default function App() {
+    const [showSplash, setShowSplash] = useState(true);
     const [activeTab, setActiveTab] = useState('library');
     const [programType, setProgramType] = useState('sunday');
     const [programs, setPrograms] = useState({
         sunday: { sundaySchool: [], welcome: null, callToWorship: null, divineWorship: null, responsiveReading: { book: '', chapter: '', verse: '' }, offering: null, response: null, sevenFoldAmen: null },
         prayer: { openingHymns: [], responsiveReading: { book: '', chapter: '', verse: '' }, offering: null, response: null, threefoldAmen: null }
     });
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowSplash(false);
+        }, 2500);
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleAddToProgram = (section, hymn) => {
         setPrograms(prev => {
@@ -434,6 +487,10 @@ export default function App() {
             <Icon /> <span className="ml-3 hidden md:block">{label}</span>
         </button>
     );
+
+    if (showSplash) {
+        return <SplashScreen />;
+    }
 
     return (
         <div className="flex flex-col md:flex-row h-screen bg-slate-100 font-sans text-slate-800">
