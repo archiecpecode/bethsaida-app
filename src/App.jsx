@@ -59,26 +59,26 @@ const SplashScreen = () => (
     </div>
 );
 
-// BULLETPROOF BLOCK-OVER-BLOCK CHORD RENDERER
+// BULLETPROOF CHORD RENDERER (Stacks chords cleanly, never drops trailing chords!)
 const HymnRenderer = ({ lyrics, transposeSteps }) => {
     const lines = lyrics.split('\n');
     return (
         <div className="hymn-lyrics text-slate-800 text-lg">
             {lines.map((line, i) => {
-                // Return a clean empty block for visual line breaks
+                // Empty lines become spacing
                 if (line.trim() === '') return <div key={i} className="h-6"></div>;
                 
                 const segments = [];
                 const regex = /\[(.*?)\]([^\[]*)/g;
                 const firstChordMatch = line.indexOf('[');
                 
-                // Text before the very first chord on a line
+                // Capture any text before the very first chord
                 if (firstChordMatch > 0 || firstChordMatch === -1) {
                     const textBefore = firstChordMatch === -1 ? line : line.substring(0, firstChordMatch);
                     segments.push({ chord: '', text: textBefore });
                 }
                 
-                // Extract all chords and the text that directly follows them
+                // Parse all [Chord]Text blocks
                 let match;
                 while ((match = regex.exec(line)) !== null) {
                     const originalChord = match[1];
@@ -87,13 +87,18 @@ const HymnRenderer = ({ lyrics, transposeSteps }) => {
                     segments.push({ chord: transposed, text: text });
                 }
 
-                // Render as inline-blocks. Divs strictly force a vertical top/bottom stack!
+                // Render in a 2-story Flex Column to guarantee stacked alignment
                 return (
-                    <div key={i} className="mb-4 block leading-tight">
+                    <div key={i} className="mb-3 flex flex-wrap items-end">
                         {segments.map((seg, idx) => (
-                            <div key={idx} className="inline-block align-bottom">
-                                <div className="text-amber-600 font-bold text-[0.9rem] font-sans h-5 whitespace-pre">{seg.chord}</div>
-                                <div className="font-serif text-[1.15rem] leading-none whitespace-pre">{seg.text}</div>
+                            <div key={idx} className="flex flex-col justify-end whitespace-pre">
+                                <span className="text-amber-600 font-bold text-[0.95rem] font-sans h-5 flex items-end pb-1">
+                                    {seg.chord}
+                                </span>
+                                {/* The \u200B zero-width space forces empty text to have physical height so the chord never sinks! */}
+                                <span className="font-serif text-[1.15rem] leading-none min-h-[1.15rem] flex items-end">
+                                    {seg.text || '\u200B'}
+                                </span>
                             </div>
                         ))}
                     </div>
@@ -458,7 +463,6 @@ export default function App() {
     const [activeTab, setActiveTab] = useState('library');
     const [programType, setProgramType] = useState('sunday');
     
-    // Global Selection State (Allows jumping from Program to Library)
     const [selectedHymn, setSelectedHymn] = useState(null);
     const [transpose, setTranspose] = useState(0);
     const [activeCategory, setActiveCategory] = useState('Hymn');
@@ -510,7 +514,6 @@ export default function App() {
         setActiveTab('program');
     };
 
-    // Jumps from Program Tab to Library Tab perfectly!
     const openSongInLibrary = (song) => {
         if (!song) {
             setActiveTab('library');
