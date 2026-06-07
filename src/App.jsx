@@ -13,6 +13,7 @@ const IconDownload = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-
 const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const IconMessageSquare = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>;
 const IconSend = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>;
+const IconClose = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
 
 // --- TRANSPOSITION LOGIC ---
 const NOTES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -34,86 +35,61 @@ function transposeChord(chord, steps) {
 
 // --- COMPONENTS ---
 
-// NEW: SPLASH SCREEN ANIMATION
+// SPLASH SCREEN
 const SplashScreen = () => (
     <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50">
         <style>
             {`
-            @keyframes logoReveal {
-                0% { opacity: 0; transform: scale(0.9) translateY(20px); }
-                100% { opacity: 1; transform: scale(1) translateY(0); }
-            }
-            @keyframes lineExpand {
-                0% { width: 0px; opacity: 0; }
-                100% { width: 96px; opacity: 0.8; }
-            }
-            @keyframes fadeUpText {
-                0% { opacity: 0; transform: translateY(10px); }
-                100% { opacity: 1; transform: translateY(0); }
-            }
-            .animate-logo {
-                animation: logoReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            }
-            .animate-line {
-                animation: lineExpand 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
-                width: 0px;
-            }
-            .animate-sub {
-                animation: fadeUpText 1s ease-out 0.8s forwards;
-                opacity: 0;
-            }
+            @keyframes logoReveal { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+            @keyframes lineExpand { 0% { width: 0px; opacity: 0; } 100% { width: 96px; opacity: 0.8; } }
+            @keyframes fadeUpText { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+            .animate-logo { animation: logoReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+            .animate-line { animation: lineExpand 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards; width: 0px; }
+            .animate-sub { animation: fadeUpText 1s ease-out 0.8s forwards; opacity: 0; }
             `}
         </style>
         <div className="animate-logo flex flex-col items-center">
             <div className="bg-slate-800 p-4 rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.15)] mb-6">
                 <IconMusic className="w-12 h-12 text-amber-500" />
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold font-serif text-white tracking-wide mb-3">
-                Bethsaida
-            </h1>
+            <h1 className="text-5xl md:text-6xl font-bold font-serif text-white tracking-wide mb-3">Bethsaida</h1>
             <div className="animate-line h-1 bg-amber-500 rounded-full mb-4"></div>
-            <p className="animate-sub text-amber-400 text-xs md:text-sm uppercase tracking-[0.3em] font-bold">
-                Music Team
-            </p>
+            <p className="animate-sub text-amber-400 text-xs md:text-sm uppercase tracking-[0.3em] font-bold">Music Team</p>
         </div>
     </div>
 );
 
-// UPDATED: Ultimate Guitar Style Chords (Stacked above lyrics)
+// HIGH-ACCURACY CHORD RENDERER
 const HymnRenderer = ({ lyrics, transposeSteps }) => {
     const lines = lyrics.split('\n');
     return (
-        <div className="hymn-lyrics text-slate-800 text-lg font-sans">
+        <div className="hymn-lyrics text-slate-800 text-lg">
             {lines.map((line, i) => {
-                if (line.trim() === '') return <div key={i} className="h-6"></div>; // Empty line spacer
+                if (line.trim() === '') return <div key={i} className="h-6"></div>;
                 
-                const parts = line.split('[');
                 const segments = [];
+                const regex = /\[(.*?)\]([^\[]*)/g;
+                const firstChordMatch = line.indexOf('[');
                 
-                parts.forEach((part, idx) => {
-                    if (idx === 0) {
-                        if (part) segments.push({ chord: '', text: part });
-                    } else {
-                        const closeIdx = part.indexOf(']');
-                        if (closeIdx !== -1) {
-                            const originalChord = part.substring(0, closeIdx);
-                            const text = part.substring(closeIdx + 1);
-                            const transposed = transposeSteps !== 0 ? transposeChord(originalChord, transposeSteps) : originalChord;
-                            segments.push({ chord: transposed, text: text });
-                        } else {
-                            segments.push({ chord: '', text: '[' + part });
-                        }
-                    }
-                });
+                if (firstChordMatch > 0 || firstChordMatch === -1) {
+                    const textBefore = firstChordMatch === -1 ? line : line.substring(0, firstChordMatch);
+                    segments.push({ chord: '', text: textBefore });
+                }
+                
+                let match;
+                while ((match = regex.exec(line)) !== null) {
+                    const originalChord = match[1];
+                    const text = match[2];
+                    const transposed = transposeSteps !== 0 ? transposeChord(originalChord, transposeSteps) : originalChord;
+                    segments.push({ chord: transposed, text: text });
+                }
 
                 return (
                     <div key={i} className="flex flex-wrap items-end mb-3">
                         {segments.map((seg, idx) => (
                             <div key={idx} className="flex flex-col">
-                                {/* Chord on top, min-height ensures alignment even if there is no chord */}
-                                <span className="text-amber-600 font-bold text-sm min-h-[1.25rem]">{seg.chord}</span>
-                                {/* Text on bottom, whitespace-pre keeps exact spacing intact */}
-                                <span className="whitespace-pre text-lg">{seg.text}</span>
+                                <span className="text-amber-600 font-bold text-sm min-h-[1.25rem] font-sans -mb-1">{seg.chord}</span>
+                                <span className="whitespace-pre font-serif text-[1.1rem] leading-none">{seg.text}</span>
                             </div>
                         ))}
                     </div>
@@ -123,39 +99,36 @@ const HymnRenderer = ({ lyrics, transposeSteps }) => {
     );
 };
 
-const HymnLibrary = ({ addToProgram, programType }) => {
+const HymnLibrary = ({ 
+    addToProgram, 
+    activeProgramData, 
+    selectedHymn, setSelectedHymn, 
+    transpose, setTranspose, 
+    activeCategory, setActiveCategory 
+}) => {
     const [search, setSearch] = useState('');
-    const [selectedHymn, setSelectedHymn] = useState(null);
-    const [transpose, setTranspose] = useState(0);
     const [showAddModal, setShowAddModal] = useState(false);
-    const [activeCategory, setActiveCategory] = useState('Hymn');
 
     const filteredHymns = songsDB.filter(h => 
         h.category === activeCategory &&
         (h.title.toLowerCase().includes(search.toLowerCase()) || h.lyrics.toLowerCase().includes(search.toLowerCase()))
     ).sort((a, b) => a.title.localeCompare(b.title));
 
-    const handleAddToProgram = (section) => { addToProgram(section, { ...selectedHymn, transpose }); setShowAddModal(false); };
+    const handleAddToProgram = (sectionId) => { 
+        addToProgram(sectionId, { ...selectedHymn, transpose }); 
+        setShowAddModal(false); 
+    };
+
+    const assignableSections = activeProgramData.filter(s => s.type !== 'reading');
 
     return (
         <div className="flex flex-col md:flex-row gap-6 h-full relative">
             <div className={`w-full md:w-1/3 flex-col bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-full ${selectedHymn ? 'hidden md:flex' : 'flex'}`}>
                 <div className="p-4 border-b border-slate-200 bg-slate-50 shrink-0">
                     <div className="flex bg-slate-200 p-1 rounded-lg mb-3">
-                        <button 
-                            onClick={() => { setActiveCategory('Hymn'); setSelectedHymn(null); }} 
-                            className={`flex-1 py-1.5 text-sm font-bold rounded-md transition ${activeCategory === 'Hymn' ? 'bg-white shadow text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}
-                        >
-                            Traditional
-                        </button>
-                        <button 
-                            onClick={() => { setActiveCategory('Contemporary'); setSelectedHymn(null); }} 
-                            className={`flex-1 py-1.5 text-sm font-bold rounded-md transition ${activeCategory === 'Contemporary' ? 'bg-white shadow text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}
-                        >
-                            Contemporary
-                        </button>
+                        <button onClick={() => { setActiveCategory('Hymn'); setSelectedHymn(null); }} className={`flex-1 py-1.5 text-sm font-bold rounded-md transition ${activeCategory === 'Hymn' ? 'bg-white shadow text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}>Traditional</button>
+                        <button onClick={() => { setActiveCategory('Contemporary'); setSelectedHymn(null); }} className={`flex-1 py-1.5 text-sm font-bold rounded-md transition ${activeCategory === 'Contemporary' ? 'bg-white shadow text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}>Contemporary</button>
                     </div>
-
                     <div className="relative">
                         <IconSearch className="absolute left-3 top-2.5 text-slate-400 w-5 h-5" />
                         <input type="text" placeholder={`Search ${activeCategory === 'Hymn' ? 'hymns' : 'worship songs'}...`} className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none transition" value={search} onChange={e => setSearch(e.target.value)} />
@@ -172,9 +145,7 @@ const HymnLibrary = ({ addToProgram, programType }) => {
                             </div>
                         </button>
                     ))}
-                    {filteredHymns.length === 0 && (
-                        <div className="text-center p-6 text-slate-400 text-sm">No songs found in this category.</div>
-                    )}
+                    {filteredHymns.length === 0 && <div className="text-center p-6 text-slate-400 text-sm">No songs found in this category.</div>}
                 </div>
             </div>
 
@@ -182,13 +153,7 @@ const HymnLibrary = ({ addToProgram, programType }) => {
                 {selectedHymn ? (
                     <>
                         <div className="p-4 md:p-6 border-b border-slate-200 bg-slate-900 text-white flex flex-col justify-between shrink-0">
-                            <button 
-                                onClick={() => setSelectedHymn(null)} 
-                                className="md:hidden mb-4 text-amber-400 text-sm font-bold flex items-center w-max"
-                            >
-                                &larr; Back to Songs
-                            </button>
-
+                            <button onClick={() => setSelectedHymn(null)} className="md:hidden mb-4 text-amber-400 text-sm font-bold flex items-center w-max">&larr; Back to Songs</button>
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                 <div>
                                     <h2 className="text-2xl font-bold font-serif text-amber-400">{selectedHymn.title}</h2>
@@ -219,25 +184,20 @@ const HymnLibrary = ({ addToProgram, programType }) => {
 
                 {showAddModal && (
                     <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-                        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
-                            <div className="p-5 border-b border-slate-100 bg-slate-50">
-                                <h3 className="text-lg font-bold text-slate-800">Add to {programType === 'sunday' ? 'Sunday Service' : 'Prayer Meeting'}</h3>
-                                <p className="text-sm text-amber-600 font-medium mt-1">"{selectedHymn.title}"</p>
+                        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col max-h-[80vh]">
+                            <div className="p-5 border-b border-slate-100 bg-slate-50 shrink-0 flex justify-between items-start">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800">Add to Program</h3>
+                                    <p className="text-sm text-amber-600 font-medium mt-1">"{selectedHymn.title}"</p>
+                                </div>
+                                <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600"><IconClose /></button>
                             </div>
-                            <div className="p-2 h-64 overflow-y-auto">
-                                {(programType === 'sunday' ? [
-                                    { id: 'sundaySchool', label: 'Sunday School Hymns (Max 2)' }, { id: 'welcome', label: 'Welcome Song' }, { id: 'callToWorship', label: 'Call to Worship Hymn' },
-                                    { id: 'divineWorship', label: 'Divine Worship Hymn' }, { id: 'offering', label: 'Offering Hymn' }, { id: 'response', label: 'Response Hymn' }, { id: 'sevenFoldAmen', label: 'Seven Fold Amen' }
-                                ] : [
-                                    { id: 'openingHymns', label: 'Two Hymns (Max 2)' }, { id: 'offering', label: 'Offering Hymn' }, { id: 'response', label: 'Response Song' }, { id: 'threefoldAmen', label: 'Threefold Amen' }
-                                ]).map(section => (
+                            <div className="p-2 overflow-y-auto flex-1">
+                                {assignableSections.map(section => (
                                     <button key={section.id} onClick={() => handleAddToProgram(section.id)} className="w-full text-left px-4 py-3 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition font-medium text-slate-700 border-b border-slate-50 last:border-0">
-                                        {section.label}
+                                        {section.title}
                                     </button>
                                 ))}
-                            </div>
-                            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-                                <button onClick={() => setShowAddModal(false)} className="px-4 py-2 text-slate-500 hover:text-slate-800 font-medium">Cancel</button>
                             </div>
                         </div>
                     </div>
@@ -247,23 +207,54 @@ const HymnLibrary = ({ addToProgram, programType }) => {
     );
 };
 
-const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, navigateToLibrary }) => {
+const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, openSongInLibrary }) => {
     const printRef = useRef(null);
     const [isExporting, setIsExporting] = useState(false);
+    const [newSectionTitle, setNewSectionTitle] = useState('');
+    const [showAddSection, setShowAddSection] = useState(false);
+    
     const currentProgram = programs[programType];
 
-    const handleRemove = (sectionId, index = null) => {
+    const handleRemove = (sectionId, itemIndex) => {
         setPrograms(prev => {
             const next = {...prev};
-            const currentProg = {...next[programType]};
-            if (Array.isArray(currentProg[sectionId])) currentProg[sectionId] = currentProg[sectionId].filter((_, i) => i !== index);
-            else currentProg[sectionId] = null;
+            const currentProg = [...next[programType]];
+            const sectionIndex = currentProg.findIndex(s => s.id === sectionId);
+            if (sectionIndex !== -1) {
+                const updatedItems = [...currentProg[sectionIndex].items];
+                updatedItems.splice(itemIndex, 1);
+                currentProg[sectionIndex] = { ...currentProg[sectionIndex], items: updatedItems };
+            }
             next[programType] = currentProg;
             return next;
         });
     };
 
-    const handleReadingChange = (field, value) => setPrograms(prev => ({ ...prev, [programType]: { ...prev[programType], responsiveReading: { ...prev[programType].responsiveReading, [field]: value } } }));
+    const handleReadingChange = (sectionId, field, value) => {
+        setPrograms(prev => {
+            const next = {...prev};
+            const currentProg = [...next[programType]];
+            const sectionIndex = currentProg.findIndex(s => s.id === sectionId);
+            if (sectionIndex !== -1) {
+                currentProg[sectionIndex] = { ...currentProg[sectionIndex], [field]: value };
+            }
+            next[programType] = currentProg;
+            return next;
+        });
+    };
+
+    const addCustomSection = () => {
+        if (!newSectionTitle.trim()) return;
+        setPrograms(prev => ({
+            ...prev,
+            [programType]: [
+                ...prev[programType],
+                { id: 'custom_' + Date.now(), title: newSectionTitle, isMultiple: true, items: [] }
+            ]
+        }));
+        setNewSectionTitle('');
+        setShowAddSection(false);
+    };
 
     const exportAsImage = async () => {
         setIsExporting(true);
@@ -271,9 +262,9 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, na
             try {
                 const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fcfbf9' });
                 const link = document.createElement('a'); link.download = `Bethsaida-Program.png`; link.href = canvas.toDataURL('image/png'); link.click();
-            } catch (err) { console.error("Export Image failed:", err); }
+            } catch (err) { console.error("Export Image failed:", err); alert("Failed to export. Try generating a PDF instead."); }
             setIsExporting(false);
-        }, 100);
+        }, 500); // 500ms ensures the UI fully updates to hide the buttons before snapping the picture
     };
 
     const exportAsPDF = async () => {
@@ -287,56 +278,13 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, na
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
                 pdf.save(`Bethsaida-Program.pdf`);
-            } catch (err) { console.error("Export PDF failed:", err); }
+            } catch (err) { console.error("Export PDF failed:", err); alert("Failed to generate PDF."); }
             setIsExporting(false);
-        }, 100);
+        }, 500);
     };
-
-    const SectionSlot = ({ title, sectionId, isMultiple = false }) => {
-        const items = isMultiple ? currentProgram[sectionId] : (currentProgram[sectionId] ? [currentProgram[sectionId]] : []);
-        return (
-            <div className="mb-6 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-                    <h3 className="font-semibold text-slate-800 text-sm md:text-base">{title}</h3>
-                    {!isExporting && <button onClick={navigateToLibrary} className="text-xs font-bold text-amber-600 hover:text-amber-800 flex items-center px-2 py-1 bg-amber-50 rounded-md"><IconPlus className="w-3 h-3 mr-1" /> <span className="hidden md:inline">Add Song</span></button>}
-                </div>
-                <div className="p-3 md:p-4">
-                    {items.length === 0 ? ( <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-xs md:text-sm">{isExporting ? "---" : "No hymn selected. Click 'Add'."}</div> ) : (
-                        <div className="space-y-3">
-                            {items.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center bg-slate-50 border border-slate-100 p-3 rounded-lg">
-                                    <div>
-                                        <p className="font-bold text-slate-900 font-serif text-base md:text-lg">{item.title} {item.transpose !== 0 && <span className="text-xs font-sans text-amber-600 font-normal ml-2">(Key: {item.transpose > 0 ? `+${item.transpose}` : item.transpose})</span>}</p>
-                                        <p className="text-xs text-slate-500">By {item.author}</p>
-                                    </div>
-                                    {!isExporting && <button onClick={() => handleRemove(sectionId, isMultiple ? idx : null)} className="p-2 text-red-500 hover:bg-red-50 rounded-md transition"><IconTrash className="w-4 h-4" /></button>}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-    const renderResponsiveReading = () => (
-        <div className="mb-6 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-            <div className="bg-slate-50 px-5 py-3 border-b border-slate-200"><h3 className="font-semibold text-slate-800">Responsive Reading</h3></div>
-            <div className="p-4 grid grid-cols-3 gap-2 md:gap-3">
-                {['book', 'chapter', 'verse'].map(field => (
-                    <div key={field}>
-                        <label className="block text-[10px] md:text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">{field}</label>
-                        {isExporting ? <p className="font-serif text-base md:text-lg font-medium text-slate-800">{currentProgram.responsiveReading[field] || '---'}</p> : 
-                            <input type="text" value={currentProgram.responsiveReading[field]} onChange={(e) => handleReadingChange(field, e.target.value)} className="w-full px-2 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" />
-                        }
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
 
     return (
-        <div className="flex flex-col h-full overflow-y-auto">
+        <div className="flex flex-col h-full overflow-y-auto relative">
             <div className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm shrink-0">
                 <div>
                     <h2 className="text-xl md:text-2xl font-bold text-slate-800 font-serif">Service Program</h2>
@@ -353,24 +301,76 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, na
                 </div>
             </div>
 
-            <div ref={printRef} className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 pb-12 p-4 md:p-8 paper-bg rounded-xl border border-slate-200 shadow-inner">
+            {/* Changed from columns layout to Grid to fix html2canvas crashing */}
+            <div ref={printRef} className="pb-12 p-4 md:p-8 paper-bg rounded-xl border border-slate-200 shadow-inner min-h-full bg-[#fcfbf9]">
                 {isExporting && (
-                    <div className="col-span-full mb-8 text-center border-b-2 border-slate-200 pb-8">
+                    <div className="mb-8 text-center border-b-2 border-slate-200 pb-8">
                         <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 font-serif tracking-tight">BETHSAIDA MUSIC TEAM</h1>
                         <h2 className="text-xl md:text-2xl font-semibold text-amber-600 mt-2 font-serif">{programType === 'sunday' ? 'Sunday Service' : 'Prayer Meeting'} Program</h2>
                         <p className="text-slate-500 mt-3 italic font-serif text-base md:text-lg">"Make a joyful noise unto the Lord."</p>
                     </div>
                 )}
-                {programType === 'sunday' ? (
-                    <>
-                        <div><SectionSlot title="Sunday School Hymns" sectionId="sundaySchool" isMultiple={true} /><SectionSlot title="Welcome Song" sectionId="welcome" /><SectionSlot title="Call to Worship Hymn" sectionId="callToWorship" /></div>
-                        <div><SectionSlot title="Divine Worship Hymn" sectionId="divineWorship" />{renderResponsiveReading()}<SectionSlot title="Offering Hymn" sectionId="offering" /><SectionSlot title="Response Hymn" sectionId="response" /><SectionSlot title="Seven Fold Amen" sectionId="sevenFoldAmen" /></div>
-                    </>
-                ) : (
-                    <>
-                        <div><SectionSlot title="Two Hymns" sectionId="openingHymns" isMultiple={true} />{renderResponsiveReading()}</div>
-                        <div><SectionSlot title="Offering Hymn" sectionId="offering" /><SectionSlot title="Response Song" sectionId="response" /><SectionSlot title="Threefold Amen" sectionId="threefoldAmen" /></div>
-                    </>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                    {currentProgram.map(section => {
+                        if (section.type === 'reading') {
+                            return (
+                                <div key={section.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-max">
+                                    <div className="bg-slate-50 px-5 py-3 border-b border-slate-200"><h3 className="font-semibold text-slate-800">{section.title}</h3></div>
+                                    <div className="p-4 grid grid-cols-3 gap-2 md:gap-3">
+                                        {['book', 'chapter', 'verse'].map(field => (
+                                            <div key={field}>
+                                                <label className="block text-[10px] md:text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">{field}</label>
+                                                {isExporting ? <p className="font-serif text-base md:text-lg font-medium text-slate-800">{section[field] || '---'}</p> : 
+                                                    <input type="text" value={section[field]} onChange={(e) => handleReadingChange(section.id, field, e.target.value)} className="w-full px-2 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" />
+                                                }
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <div key={section.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-max">
+                                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                                    <h3 className="font-semibold text-slate-800 text-sm md:text-base">{section.title}</h3>
+                                    {!isExporting && <button onClick={() => openSongInLibrary(null)} className="text-xs font-bold text-amber-600 hover:text-amber-800 flex items-center px-2 py-1 bg-amber-50 rounded-md"><IconPlus className="w-3 h-3 mr-1" /> <span className="hidden md:inline">Add Song</span></button>}
+                                </div>
+                                <div className="p-3 md:p-4">
+                                    {section.items.length === 0 ? ( <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-xs md:text-sm">{isExporting ? "---" : "No hymn selected."}</div> ) : (
+                                        <div className="space-y-3">
+                                            {section.items.map((item, idx) => (
+                                                <div key={idx} onClick={() => !isExporting && openSongInLibrary(item)} className="flex justify-between items-center bg-slate-50 border border-slate-100 p-3 rounded-lg cursor-pointer hover:bg-amber-50 transition group">
+                                                    <div>
+                                                        <p className="font-bold text-slate-900 font-serif text-base md:text-lg group-hover:text-amber-700 transition">{item.title} {item.transpose !== 0 && <span className="text-xs font-sans text-amber-600 font-normal ml-2">(Key: {item.transpose > 0 ? `+${item.transpose}` : item.transpose})</span>}</p>
+                                                        <p className="text-xs text-slate-500">By {item.author}</p>
+                                                    </div>
+                                                    {!isExporting && <button onClick={(e) => { e.stopPropagation(); handleRemove(section.id, idx); }} className="p-2 text-red-500 hover:bg-red-100 bg-white rounded-md transition shadow-sm"><IconTrash className="w-4 h-4" /></button>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {!isExporting && (
+                    <div className="mt-8 flex justify-center">
+                        {showAddSection ? (
+                            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex gap-2 items-center">
+                                <input type="text" placeholder="Custom section name..." value={newSectionTitle} onChange={e => setNewSectionTitle(e.target.value)} autoFocus className="px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-amber-500 outline-none text-sm w-48 md:w-64" />
+                                <button onClick={addCustomSection} className="bg-amber-500 text-slate-900 font-bold px-4 py-2 rounded-md hover:bg-amber-600 transition">Add</button>
+                                <button onClick={() => setShowAddSection(false)} className="text-slate-400 hover:text-slate-600 px-2"><IconClose /></button>
+                            </div>
+                        ) : (
+                            <button onClick={() => setShowAddSection(true)} className="flex items-center px-5 py-2.5 bg-slate-800 text-amber-400 font-bold rounded-full hover:bg-slate-700 transition shadow-md">
+                                <IconPlus className="w-4 h-4 mr-2" /> Add Custom Section
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
         </div>
@@ -393,10 +393,7 @@ const AIAssistant = () => {
         setInput(''); setIsLoading(true);
 
         try {
-            if (!apiKey) {
-                throw new Error("API Key is missing! Did you forget to add your .env file before building?");
-            }
-
+            if (!apiKey) throw new Error("API Key is missing! Did you forget to add your .env file before building?");
             const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -457,29 +454,69 @@ export default function App() {
     const [showSplash, setShowSplash] = useState(true);
     const [activeTab, setActiveTab] = useState('library');
     const [programType, setProgramType] = useState('sunday');
+    
+    // LIFTED: Global Song Selection State
+    const [selectedHymn, setSelectedHymn] = useState(null);
+    const [transpose, setTranspose] = useState(0);
+    const [activeCategory, setActiveCategory] = useState('Hymn');
+
     const [programs, setPrograms] = useState({
-        sunday: { sundaySchool: [], welcome: null, callToWorship: null, divineWorship: null, responsiveReading: { book: '', chapter: '', verse: '' }, offering: null, response: null, sevenFoldAmen: null },
-        prayer: { openingHymns: [], responsiveReading: { book: '', chapter: '', verse: '' }, offering: null, response: null, threefoldAmen: null }
+        sunday: [
+            { id: 'sundaySchool', title: 'Sunday School Hymns', isMultiple: true, items: [] },
+            { id: 'welcome', title: 'Welcome Song', isMultiple: false, items: [] },
+            { id: 'callToWorship', title: 'Call to Worship Hymn', isMultiple: false, items: [] },
+            { id: 'divineWorship', title: 'Divine Worship Hymn', isMultiple: false, items: [] },
+            { id: 'responsiveReading', title: 'Responsive Reading', type: 'reading', book: '', chapter: '', verse: '' },
+            { id: 'offering', title: 'Offering Hymn', isMultiple: false, items: [] },
+            { id: 'response', title: 'Response Hymn', isMultiple: false, items: [] },
+            { id: 'sevenFoldAmen', title: 'Seven Fold Amen', isMultiple: false, items: [] }
+        ],
+        prayer: [
+            { id: 'openingHymns', title: 'Two Hymns', isMultiple: true, items: [] },
+            { id: 'responsiveReading', title: 'Responsive Reading', type: 'reading', book: '', chapter: '', verse: '' },
+            { id: 'offering', title: 'Offering Hymn', isMultiple: false, items: [] },
+            { id: 'response', title: 'Response Song', isMultiple: false, items: [] },
+            { id: 'threefoldAmen', title: 'Threefold Amen', isMultiple: false, items: [] }
+        ]
     });
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setShowSplash(false);
-        }, 2500);
+        const timer = setTimeout(() => setShowSplash(false), 2500);
         return () => clearTimeout(timer);
     }, []);
 
-    const handleAddToProgram = (section, hymn) => {
+    const handleAddToProgram = (sectionId, hymn) => {
         setPrograms(prev => {
-            const currentProg = prev[programType];
-            let newSectionData = currentProg[section];
-            if (Array.isArray(newSectionData)) {
-                if (newSectionData.length < 2) newSectionData = [...newSectionData, hymn];
-                else newSectionData = [newSectionData[0], hymn];
-            } else newSectionData = hymn;
-            return { ...prev, [programType]: { ...currentProg, [section]: newSectionData } };
+            const next = {...prev};
+            const currentProg = [...next[programType]];
+            const sectionIndex = currentProg.findIndex(s => s.id === sectionId);
+            
+            if (sectionIndex !== -1) {
+                const section = currentProg[sectionIndex];
+                let newItems = [...section.items];
+                if (section.isMultiple) {
+                    newItems.push(hymn);
+                } else {
+                    newItems = [hymn];
+                }
+                currentProg[sectionIndex] = { ...section, items: newItems };
+            }
+            next[programType] = currentProg;
+            return next;
         });
         setActiveTab('program');
+    };
+
+    // ACTION: Jump from Program to Library
+    const openSongInLibrary = (song) => {
+        if (!song) {
+            setActiveTab('library');
+            return;
+        }
+        setSelectedHymn(song);
+        setTranspose(song.transpose || 0);
+        setActiveCategory(song.category || 'Hymn');
+        setActiveTab('library');
     };
 
     const NavItem = ({ id, label, icon: Icon }) => (
@@ -488,14 +525,10 @@ export default function App() {
         </button>
     );
 
-    if (showSplash) {
-        return <SplashScreen />;
-    }
+    if (showSplash) return <SplashScreen />;
 
     return (
         <div className="flex flex-col md:flex-row h-screen bg-slate-100 font-sans text-slate-800">
-            
-            {/* DESKTOP SIDEBAR (Hidden on Mobile) */}
             <div className="hidden md:flex w-64 bg-slate-900 text-slate-200 flex-col p-4 shadow-xl z-10 shrink-0">
                 <div className="mb-8">
                     <h1 className="text-xl font-bold font-serif text-white tracking-wide">Bethsaida</h1>
@@ -506,40 +539,25 @@ export default function App() {
                     <NavItem id="program" label="Service Program" icon={IconList} />
                     <NavItem id="ai" label="AI Assistant" icon={IconMessage} />
                 </nav>
-                
-                {/* UPDATED FOOTER WITH YOUR NAME */}
                 <div className="mt-auto pb-4 text-xs text-slate-500 text-center font-bold tracking-wide">Created by Archie Abona</div>
             </div>
 
-            {/* MOBILE TOP HEADER (Hidden on Desktop) */}
             <div className="md:hidden bg-slate-900 p-3 flex justify-center items-center shadow-md z-10 shrink-0">
                 <IconMusic className="text-amber-500 w-5 h-5 mr-2" />
                 <h1 className="text-lg font-bold font-serif text-white tracking-wide">Bethsaida</h1>
             </div>
 
-            {/* MAIN CONTENT AREA */}
             <div className="flex-1 p-4 md:p-6 overflow-hidden h-full">
-                {activeTab === 'library' && <HymnLibrary addToProgram={handleAddToProgram} programType={programType} />}
-                {activeTab === 'program' && <ProgramBuilder programs={programs} setPrograms={setPrograms} programType={programType} setProgramType={setProgramType} navigateToLibrary={() => setActiveTab('library')} />}
+                {activeTab === 'library' && <HymnLibrary addToProgram={handleAddToProgram} activeProgramData={programs[programType]} selectedHymn={selectedHymn} setSelectedHymn={setSelectedHymn} transpose={transpose} setTranspose={setTranspose} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />}
+                {activeTab === 'program' && <ProgramBuilder programs={programs} setPrograms={setPrograms} programType={programType} setProgramType={setProgramType} openSongInLibrary={openSongInLibrary} />}
                 {activeTab === 'ai' && <AIAssistant />}
             </div>
 
-            {/* MOBILE BOTTOM TAB NAV (Hidden on Desktop) */}
             <div className="md:hidden bg-slate-900 flex justify-around p-2 shadow-[0_-4px_10px_rgba(0,0,0,0.2)] shrink-0 z-20 pb-6">
-                <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center flex-1 p-2 transition ${activeTab === 'library' ? 'text-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
-                    <IconMusic />
-                    <span className="text-[10px] mt-1 font-bold tracking-wide">Library</span>
-                </button>
-                <button onClick={() => setActiveTab('program')} className={`flex flex-col items-center flex-1 p-2 transition ${activeTab === 'program' ? 'text-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
-                    <IconList />
-                    <span className="text-[10px] mt-1 font-bold tracking-wide">Program</span>
-                </button>
-                <button onClick={() => setActiveTab('ai')} className={`flex flex-col items-center flex-1 p-2 transition ${activeTab === 'ai' ? 'text-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
-                    <IconMessage />
-                    <span className="text-[10px] mt-1 font-bold tracking-wide">AI</span>
-                </button>
+                <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center flex-1 p-2 transition ${activeTab === 'library' ? 'text-amber-500' : 'text-slate-400 hover:text-slate-200'}`}><IconMusic /><span className="text-[10px] mt-1 font-bold tracking-wide">Library</span></button>
+                <button onClick={() => setActiveTab('program')} className={`flex flex-col items-center flex-1 p-2 transition ${activeTab === 'program' ? 'text-amber-500' : 'text-slate-400 hover:text-slate-200'}`}><IconList /><span className="text-[10px] mt-1 font-bold tracking-wide">Program</span></button>
+                <button onClick={() => setActiveTab('ai')} className={`flex flex-col items-center flex-1 p-2 transition ${activeTab === 'ai' ? 'text-amber-500' : 'text-slate-400 hover:text-slate-200'}`}><IconMessage /><span className="text-[10px] mt-1 font-bold tracking-wide">AI</span></button>
             </div>
-
         </div>
     );
 }
