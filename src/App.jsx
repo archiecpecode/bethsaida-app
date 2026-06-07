@@ -59,23 +59,26 @@ const SplashScreen = () => (
     </div>
 );
 
-// HIGH-ACCURACY CHORD RENDERER
+// BULLETPROOF BLOCK-OVER-BLOCK CHORD RENDERER
 const HymnRenderer = ({ lyrics, transposeSteps }) => {
     const lines = lyrics.split('\n');
     return (
         <div className="hymn-lyrics text-slate-800 text-lg">
             {lines.map((line, i) => {
+                // Return a clean empty block for visual line breaks
                 if (line.trim() === '') return <div key={i} className="h-6"></div>;
                 
                 const segments = [];
                 const regex = /\[(.*?)\]([^\[]*)/g;
                 const firstChordMatch = line.indexOf('[');
                 
+                // Text before the very first chord on a line
                 if (firstChordMatch > 0 || firstChordMatch === -1) {
                     const textBefore = firstChordMatch === -1 ? line : line.substring(0, firstChordMatch);
                     segments.push({ chord: '', text: textBefore });
                 }
                 
+                // Extract all chords and the text that directly follows them
                 let match;
                 while ((match = regex.exec(line)) !== null) {
                     const originalChord = match[1];
@@ -84,12 +87,13 @@ const HymnRenderer = ({ lyrics, transposeSteps }) => {
                     segments.push({ chord: transposed, text: text });
                 }
 
+                // Render as inline-blocks. Divs strictly force a vertical top/bottom stack!
                 return (
-                    <div key={i} className="flex flex-wrap items-end mb-3">
+                    <div key={i} className="mb-4 block leading-tight">
                         {segments.map((seg, idx) => (
-                            <div key={idx} className="flex flex-col">
-                                <span className="text-amber-600 font-bold text-sm min-h-[1.25rem] font-sans -mb-1">{seg.chord}</span>
-                                <span className="whitespace-pre font-serif text-[1.1rem] leading-none">{seg.text}</span>
+                            <div key={idx} className="inline-block align-bottom">
+                                <div className="text-amber-600 font-bold text-[0.9rem] font-sans h-5 whitespace-pre">{seg.chord}</div>
+                                <div className="font-serif text-[1.15rem] leading-none whitespace-pre">{seg.text}</div>
                             </div>
                         ))}
                     </div>
@@ -264,7 +268,7 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
                 const link = document.createElement('a'); link.download = `Bethsaida-Program.png`; link.href = canvas.toDataURL('image/png'); link.click();
             } catch (err) { console.error("Export Image failed:", err); alert("Failed to export. Try generating a PDF instead."); }
             setIsExporting(false);
-        }, 500); // 500ms ensures the UI fully updates to hide the buttons before snapping the picture
+        }, 500); 
     };
 
     const exportAsPDF = async () => {
@@ -301,7 +305,6 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
                 </div>
             </div>
 
-            {/* Changed from columns layout to Grid to fix html2canvas crashing */}
             <div ref={printRef} className="pb-12 p-4 md:p-8 paper-bg rounded-xl border border-slate-200 shadow-inner min-h-full bg-[#fcfbf9]">
                 {isExporting && (
                     <div className="mb-8 text-center border-b-2 border-slate-200 pb-8">
@@ -455,7 +458,7 @@ export default function App() {
     const [activeTab, setActiveTab] = useState('library');
     const [programType, setProgramType] = useState('sunday');
     
-    // LIFTED: Global Song Selection State
+    // Global Selection State (Allows jumping from Program to Library)
     const [selectedHymn, setSelectedHymn] = useState(null);
     const [transpose, setTranspose] = useState(0);
     const [activeCategory, setActiveCategory] = useState('Hymn');
@@ -507,7 +510,7 @@ export default function App() {
         setActiveTab('program');
     };
 
-    // ACTION: Jump from Program to Library
+    // Jumps from Program Tab to Library Tab perfectly!
     const openSongInLibrary = (song) => {
         if (!song) {
             setActiveTab('library');
