@@ -14,6 +14,8 @@ const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 
 const IconMessageSquare = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>;
 const IconSend = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>;
 const IconClose = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+// NEW: Edit Icon
+const IconEdit = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
 
 // --- TRANSPOSITION LOGIC ---
 const NOTES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -59,7 +61,7 @@ const SplashScreen = () => (
     </div>
 );
 
-// CHORD RENDERER (Block-over-Block)
+// CHORD RENDERER
 const HymnRenderer = ({ lyrics, transposeSteps }) => {
     const lines = lyrics.split('\n');
     return (
@@ -96,10 +98,15 @@ const HymnRenderer = ({ lyrics, transposeSteps }) => {
 };
 
 const HymnLibrary = ({ 
-    addToProgram, activeProgramData, selectedHymn, setSelectedHymn, transpose, setTranspose, activeCategory, setActiveCategory 
+    addToProgram, activeProgramData, selectedHymn, setSelectedHymn, transpose, setTranspose, activeCategory, setActiveCategory,
+    customLyrics, setCustomLyrics // NEW: Custom Lyrics Props
 }) => {
     const [search, setSearch] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
+    
+    // NEW: Editing State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editDraft, setEditDraft] = useState('');
 
     const filteredHymns = songsDB.filter(h => 
         h.category === activeCategory &&
@@ -113,13 +120,37 @@ const HymnLibrary = ({
 
     const assignableSections = activeProgramData.filter(s => s.type !== 'reading');
 
+    // Get the lyrics (Custom if exists, otherwise Original)
+    const currentLyrics = selectedHymn ? (customLyrics[selectedHymn.id] || selectedHymn.lyrics) : '';
+
+    const startEditing = () => {
+        setEditDraft(currentLyrics);
+        setIsEditing(true);
+    };
+
+    const saveEdit = () => {
+        setCustomLyrics(prev => ({ ...prev, [selectedHymn.id]: editDraft }));
+        setIsEditing(false);
+    };
+
+    const resetEdit = () => {
+        if(window.confirm("Are you sure you want to restore the original chords? Your custom edits will be lost.")) {
+            setCustomLyrics(prev => {
+                const next = { ...prev };
+                delete next[selectedHymn.id];
+                return next;
+            });
+            setIsEditing(false);
+        }
+    };
+
     return (
         <div className="flex flex-col md:flex-row gap-6 h-full relative">
             <div className={`w-full md:w-1/3 flex-col bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-full ${selectedHymn ? 'hidden md:flex' : 'flex'}`}>
                 <div className="p-4 border-b border-slate-200 bg-slate-50 shrink-0">
                     <div className="flex bg-slate-200 p-1 rounded-lg mb-3">
-                        <button onClick={() => { setActiveCategory('Hymn'); setSelectedHymn(null); }} className={`flex-1 py-1.5 text-sm font-bold rounded-md transition ${activeCategory === 'Hymn' ? 'bg-white shadow text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}>Traditional</button>
-                        <button onClick={() => { setActiveCategory('Contemporary'); setSelectedHymn(null); }} className={`flex-1 py-1.5 text-sm font-bold rounded-md transition ${activeCategory === 'Contemporary' ? 'bg-white shadow text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}>Contemporary</button>
+                        <button onClick={() => { setActiveCategory('Hymn'); setSelectedHymn(null); setIsEditing(false); }} className={`flex-1 py-1.5 text-sm font-bold rounded-md transition ${activeCategory === 'Hymn' ? 'bg-white shadow text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}>Traditional</button>
+                        <button onClick={() => { setActiveCategory('Contemporary'); setSelectedHymn(null); setIsEditing(false); }} className={`flex-1 py-1.5 text-sm font-bold rounded-md transition ${activeCategory === 'Contemporary' ? 'bg-white shadow text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}>Contemporary</button>
                     </div>
                     <div className="relative">
                         <IconSearch className="absolute left-3 top-2.5 text-slate-400 w-5 h-5" />
@@ -129,7 +160,7 @@ const HymnLibrary = ({
 
                 <div className="flex-1 overflow-y-auto">
                     {filteredHymns.map(hymn => (
-                        <button key={hymn.id} onClick={() => { setSelectedHymn(hymn); setTranspose(0); }} className={`w-full text-left px-5 py-4 border-b border-slate-100 hover:bg-amber-50 transition ${selectedHymn?.id === hymn.id ? 'bg-amber-50 border-l-4 border-l-amber-500' : ''}`}>
+                        <button key={hymn.id} onClick={() => { setSelectedHymn(hymn); setTranspose(0); setIsEditing(false); }} className={`w-full text-left px-5 py-4 border-b border-slate-100 hover:bg-amber-50 transition ${selectedHymn?.id === hymn.id ? 'bg-amber-50 border-l-4 border-l-amber-500' : ''}`}>
                             <div className="font-semibold text-slate-800 font-serif text-lg">{hymn.title}</div>
                             <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
                                 <span>{hymn.author}</span>
@@ -145,26 +176,62 @@ const HymnLibrary = ({
                 {selectedHymn ? (
                     <>
                         <div className="p-4 md:p-6 border-b border-slate-200 bg-slate-900 text-white flex flex-col justify-between shrink-0">
-                            <button onClick={() => setSelectedHymn(null)} className="md:hidden mb-4 text-amber-400 text-sm font-bold flex items-center w-max">&larr; Back to Songs</button>
+                            <button onClick={() => { setSelectedHymn(null); setIsEditing(false); }} className="md:hidden mb-4 text-amber-400 text-sm font-bold flex items-center w-max">&larr; Back to Songs</button>
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                 <div>
-                                    <h2 className="text-2xl font-bold font-serif text-amber-400">{selectedHymn.title}</h2>
+                                    <h2 className="text-2xl font-bold font-serif text-amber-400">
+                                        {selectedHymn.title}
+                                        {customLyrics[selectedHymn.id] && <span className="ml-2 text-xs bg-amber-500 text-slate-900 px-2 py-0.5 rounded-full font-sans align-middle">EDITED</span>}
+                                    </h2>
                                     <p className="text-slate-300 text-sm">By {selectedHymn.author} &bull; {selectedHymn.language}</p>
                                 </div>
                                 <div className="flex gap-2 w-full md:w-auto">
-                                    <div className="flex bg-slate-800 rounded-lg overflow-hidden border border-slate-700 flex-1 md:flex-none">
-                                        <button onClick={() => setTranspose(p => p - 1)} className="flex-1 md:flex-none px-3 py-1 hover:bg-slate-700 font-bold">-</button>
-                                        <div className="px-3 py-1 bg-slate-800 flex items-center justify-center text-sm font-medium border-x border-slate-700">Key: {transpose > 0 ? `+${transpose}` : transpose}</div>
-                                        <button onClick={() => setTranspose(p => p + 1)} className="flex-1 md:flex-none px-3 py-1 hover:bg-slate-700 font-bold">+</button>
-                                    </div>
-                                    <button onClick={() => setShowAddModal(true)} className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-1.5 rounded-lg flex items-center justify-center transition shadow-sm">
-                                        <IconPlus className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline">Add</span>
-                                    </button>
+                                    {!isEditing && (
+                                        <>
+                                            {/* NEW: Edit Button */}
+                                            <button onClick={startEditing} className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg flex items-center justify-center transition border border-slate-700">
+                                                <IconEdit />
+                                            </button>
+                                            <div className="flex bg-slate-800 rounded-lg overflow-hidden border border-slate-700 flex-1 md:flex-none">
+                                                <button onClick={() => setTranspose(p => p - 1)} className="flex-1 md:flex-none px-3 py-1 hover:bg-slate-700 font-bold">-</button>
+                                                <div className="px-3 py-1 bg-slate-800 flex items-center justify-center text-sm font-medium border-x border-slate-700">Key: {transpose > 0 ? `+${transpose}` : transpose}</div>
+                                                <button onClick={() => setTranspose(p => p + 1)} className="flex-1 md:flex-none px-3 py-1 hover:bg-slate-700 font-bold">+</button>
+                                            </div>
+                                            <button onClick={() => setShowAddModal(true)} className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-1.5 rounded-lg flex items-center justify-center transition shadow-sm">
+                                                <IconPlus className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline">Add</span>
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
-                        <div className="p-6 md:p-8 flex-1 overflow-y-auto paper-bg">
-                            <HymnRenderer lyrics={selectedHymn.lyrics} transposeSteps={transpose} />
+                        
+                        <div className="p-6 md:p-8 flex-1 overflow-y-auto paper-bg relative flex flex-col">
+                            {isEditing ? (
+                                <div className="flex flex-col h-full animate-in fade-in">
+                                    <div className="flex justify-between items-center mb-4 shrink-0">
+                                        <div className="text-sm font-bold text-slate-500 uppercase flex flex-col md:flex-row md:items-center gap-1">
+                                            <span>Chord Editor</span>
+                                            <span className="text-xs text-slate-400 normal-case font-normal hidden md:inline ml-2">(Wrap chords in [brackets])</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {customLyrics[selectedHymn.id] && (
+                                                <button onClick={resetEdit} className="px-3 py-1.5 text-red-500 hover:bg-red-50 rounded-lg font-bold text-xs md:text-sm transition">Reset</button>
+                                            )}
+                                            <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 bg-slate-200 text-slate-700 hover:bg-slate-300 rounded-lg font-bold text-xs md:text-sm transition">Cancel</button>
+                                            <button onClick={saveEdit} className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg font-bold text-xs md:text-sm shadow-sm transition">Save</button>
+                                        </div>
+                                    </div>
+                                    <textarea 
+                                        className="flex-1 w-full p-4 font-mono text-sm md:text-base border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none resize-none leading-relaxed shadow-inner bg-[#fcfbf9]" 
+                                        value={editDraft} 
+                                        onChange={e => setEditDraft(e.target.value)}
+                                        placeholder="Type your lyrics here...\nPut chords in brackets like this: [G]A-[C]men"
+                                    />
+                                </div>
+                            ) : (
+                                <HymnRenderer lyrics={currentLyrics} transposeSteps={transpose} />
+                            )}
                         </div>
                     </>
                 ) : (
@@ -199,7 +266,7 @@ const HymnLibrary = ({
     );
 };
 
-const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, openSongInLibrary }) => {
+const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, openSongInLibrary, customLyrics }) => {
     const printRef = useRef(null);
     const [isExporting, setIsExporting] = useState(false);
     const [newSectionTitle, setNewSectionTitle] = useState('');
@@ -248,29 +315,21 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
         setShowAddSection(false);
     };
 
-    // --- MOBILE & WEB HYBRID SHARE LOGIC ---
     const handleShareOrDownload = async (fileData, filename, mimeType, isPDF) => {
         try {
             const blob = isPDF ? fileData : await (await fetch(fileData)).blob();
             const file = new File([blob], filename, { type: mimeType });
             
-            // If on Mobile device, trigger the native "Share/Save" popup!
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Bethsaida Program'
-                });
+                await navigator.share({ files: [file], title: 'Bethsaida Program' });
                 return;
             }
             
-            // Fallback for Windows/Mac desktop
             const link = document.createElement('a');
             link.download = filename;
             link.href = isPDF ? URL.createObjectURL(blob) : fileData;
             link.click();
-        } catch (error) {
-            console.error("Download Error: ", error);
-        }
+        } catch (error) { console.error("Download Error: ", error); }
     };
 
     const exportAsImage = async () => {
@@ -282,7 +341,7 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
                 await handleShareOrDownload(imgData, 'Bethsaida-Program.png', 'image/png', false);
             } catch (err) { console.error("Export Image failed:", err); alert("Failed to export."); }
             setIsExporting(false);
-        }, 800); // 800ms gives React enough time to hide UI buttons before screenshot
+        }, 800); 
     };
 
     const exportAsPDF = async () => {
@@ -361,7 +420,11 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
                                             {section.items.map((item, idx) => (
                                                 <div key={idx} onClick={() => !isExporting && openSongInLibrary(item)} className="flex justify-between items-center bg-slate-50 border border-slate-100 p-3 rounded-lg cursor-pointer hover:bg-amber-50 transition group">
                                                     <div>
-                                                        <p className="font-bold text-slate-900 font-serif text-base md:text-lg group-hover:text-amber-700 transition">{item.title} {item.transpose !== 0 && <span className="text-xs font-sans text-amber-600 font-normal ml-2">(Key: {item.transpose > 0 ? `+${item.transpose}` : item.transpose})</span>}</p>
+                                                        <p className="font-bold text-slate-900 font-serif text-base md:text-lg group-hover:text-amber-700 transition">
+                                                            {item.title} 
+                                                            {customLyrics[item.id] && <span className="ml-2 text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded uppercase font-sans">Edited</span>}
+                                                            {item.transpose !== 0 && <span className="text-xs font-sans text-amber-600 font-normal ml-2">(Key: {item.transpose > 0 ? `+${item.transpose}` : item.transpose})</span>}
+                                                        </p>
                                                         <p className="text-xs text-slate-500">By {item.author}</p>
                                                     </div>
                                                     {!isExporting && <button onClick={(e) => { e.stopPropagation(); handleRemove(section.id, idx); }} className="p-2 text-red-500 hover:bg-red-100 bg-white rounded-md transition shadow-sm"><IconTrash className="w-4 h-4" /></button>}
@@ -473,10 +536,22 @@ export default function App() {
     const [activeTab, setActiveTab] = useState('library');
     const [programType, setProgramType] = useState('sunday');
     
-    // Global Selection State (Allows jumping from Program to Library)
+    // Global Selection State
     const [selectedHymn, setSelectedHymn] = useState(null);
     const [transpose, setTranspose] = useState(0);
     const [activeCategory, setActiveCategory] = useState('Hymn');
+
+    // NEW: Persistent Local Storage for Custom Lyrics!
+    const [customLyrics, setCustomLyrics] = useState(() => {
+        try {
+            const saved = localStorage.getItem('bethsaida_custom_lyrics');
+            return saved ? JSON.parse(saved) : {};
+        } catch { return {}; }
+    });
+
+    useEffect(() => {
+        localStorage.setItem('bethsaida_custom_lyrics', JSON.stringify(customLyrics));
+    }, [customLyrics]);
 
     const [programs, setPrograms] = useState({
         sunday: [
@@ -525,7 +600,6 @@ export default function App() {
         setActiveTab('program');
     };
 
-    // Jumps from Program Tab to Library Tab instantly!
     const openSongInLibrary = (song) => {
         if (!song) {
             setActiveTab('library');
@@ -566,8 +640,8 @@ export default function App() {
             </div>
 
             <div className="flex-1 p-4 md:p-6 overflow-hidden h-full">
-                {activeTab === 'library' && <HymnLibrary addToProgram={handleAddToProgram} activeProgramData={programs[programType]} selectedHymn={selectedHymn} setSelectedHymn={setSelectedHymn} transpose={transpose} setTranspose={setTranspose} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />}
-                {activeTab === 'program' && <ProgramBuilder programs={programs} setPrograms={setPrograms} programType={programType} setProgramType={setProgramType} openSongInLibrary={openSongInLibrary} />}
+                {activeTab === 'library' && <HymnLibrary addToProgram={handleAddToProgram} activeProgramData={programs[programType]} selectedHymn={selectedHymn} setSelectedHymn={setSelectedHymn} transpose={transpose} setTranspose={setTranspose} activeCategory={activeCategory} setActiveCategory={setActiveCategory} customLyrics={customLyrics} setCustomLyrics={setCustomLyrics} />}
+                {activeTab === 'program' && <ProgramBuilder programs={programs} setPrograms={setPrograms} programType={programType} setProgramType={setProgramType} openSongInLibrary={openSongInLibrary} customLyrics={customLyrics} />}
                 {activeTab === 'ai' && <AIAssistant />}
             </div>
 
