@@ -59,26 +59,20 @@ const SplashScreen = () => (
     </div>
 );
 
-// BULLETPROOF CHORD RENDERER (Stacks chords cleanly, never drops trailing chords!)
+// CHORD RENDERER (Block-over-Block)
 const HymnRenderer = ({ lyrics, transposeSteps }) => {
     const lines = lyrics.split('\n');
     return (
         <div className="hymn-lyrics text-slate-800 text-lg">
             {lines.map((line, i) => {
-                // Empty lines become spacing
                 if (line.trim() === '') return <div key={i} className="h-6"></div>;
-                
                 const segments = [];
                 const regex = /\[(.*?)\]([^\[]*)/g;
                 const firstChordMatch = line.indexOf('[');
-                
-                // Capture any text before the very first chord
                 if (firstChordMatch > 0 || firstChordMatch === -1) {
                     const textBefore = firstChordMatch === -1 ? line : line.substring(0, firstChordMatch);
                     segments.push({ chord: '', text: textBefore });
                 }
-                
-                // Parse all [Chord]Text blocks
                 let match;
                 while ((match = regex.exec(line)) !== null) {
                     const originalChord = match[1];
@@ -86,19 +80,12 @@ const HymnRenderer = ({ lyrics, transposeSteps }) => {
                     const transposed = transposeSteps !== 0 ? transposeChord(originalChord, transposeSteps) : originalChord;
                     segments.push({ chord: transposed, text: text });
                 }
-
-                // Render in a 2-story Flex Column to guarantee stacked alignment
                 return (
                     <div key={i} className="mb-3 flex flex-wrap items-end">
                         {segments.map((seg, idx) => (
                             <div key={idx} className="flex flex-col justify-end whitespace-pre">
-                                <span className="text-amber-600 font-bold text-[0.95rem] font-sans h-5 flex items-end pb-1">
-                                    {seg.chord}
-                                </span>
-                                {/* The \u200B zero-width space forces empty text to have physical height so the chord never sinks! */}
-                                <span className="font-serif text-[1.15rem] leading-none min-h-[1.15rem] flex items-end">
-                                    {seg.text || '\u200B'}
-                                </span>
+                                <span className="text-amber-600 font-bold text-[0.95rem] font-sans h-5 flex items-end pb-1">{seg.chord}</span>
+                                <span className="font-serif text-[1.15rem] leading-none min-h-[1.15rem] flex items-end">{seg.text || '\u200B'}</span>
                             </div>
                         ))}
                     </div>
@@ -109,11 +96,7 @@ const HymnRenderer = ({ lyrics, transposeSteps }) => {
 };
 
 const HymnLibrary = ({ 
-    addToProgram, 
-    activeProgramData, 
-    selectedHymn, setSelectedHymn, 
-    transpose, setTranspose, 
-    activeCategory, setActiveCategory 
+    addToProgram, activeProgramData, selectedHymn, setSelectedHymn, transpose, setTranspose, activeCategory, setActiveCategory 
 }) => {
     const [search, setSearch] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
@@ -265,15 +248,41 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
         setShowAddSection(false);
     };
 
+    // --- MOBILE & WEB HYBRID SHARE LOGIC ---
+    const handleShareOrDownload = async (fileData, filename, mimeType, isPDF) => {
+        try {
+            const blob = isPDF ? fileData : await (await fetch(fileData)).blob();
+            const file = new File([blob], filename, { type: mimeType });
+            
+            // If on Mobile device, trigger the native "Share/Save" popup!
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Bethsaida Program'
+                });
+                return;
+            }
+            
+            // Fallback for Windows/Mac desktop
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = isPDF ? URL.createObjectURL(blob) : fileData;
+            link.click();
+        } catch (error) {
+            console.error("Download Error: ", error);
+        }
+    };
+
     const exportAsImage = async () => {
         setIsExporting(true);
         setTimeout(async () => {
             try {
                 const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fcfbf9' });
-                const link = document.createElement('a'); link.download = `Bethsaida-Program.png`; link.href = canvas.toDataURL('image/png'); link.click();
-            } catch (err) { console.error("Export Image failed:", err); alert("Failed to export. Try generating a PDF instead."); }
+                const imgData = canvas.toDataURL('image/png');
+                await handleShareOrDownload(imgData, 'Bethsaida-Program.png', 'image/png', false);
+            } catch (err) { console.error("Export Image failed:", err); alert("Failed to export."); }
             setIsExporting(false);
-        }, 500); 
+        }, 800); // 800ms gives React enough time to hide UI buttons before screenshot
     };
 
     const exportAsPDF = async () => {
@@ -286,10 +295,11 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`Bethsaida-Program.pdf`);
+                const pdfBlob = pdf.output('blob');
+                await handleShareOrDownload(pdfBlob, 'Bethsaida-Program.pdf', 'application/pdf', true);
             } catch (err) { console.error("Export PDF failed:", err); alert("Failed to generate PDF."); }
             setIsExporting(false);
-        }, 500);
+        }, 800);
     };
 
     return (
@@ -463,6 +473,7 @@ export default function App() {
     const [activeTab, setActiveTab] = useState('library');
     const [programType, setProgramType] = useState('sunday');
     
+    // Global Selection State (Allows jumping from Program to Library)
     const [selectedHymn, setSelectedHymn] = useState(null);
     const [transpose, setTranspose] = useState(0);
     const [activeCategory, setActiveCategory] = useState('Hymn');
@@ -514,6 +525,7 @@ export default function App() {
         setActiveTab('program');
     };
 
+    // Jumps from Program Tab to Library Tab instantly!
     const openSongInLibrary = (song) => {
         if (!song) {
             setActiveTab('library');
