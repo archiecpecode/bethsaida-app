@@ -3,7 +3,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { songsDB } from './songsDB'; 
 
-// NEW: Capacitor Native Plugins
+// Capacitor Native Plugins
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -41,6 +41,7 @@ function transposeChord(chord, steps) {
 
 // --- COMPONENTS ---
 
+// SPLASH SCREEN
 const SplashScreen = () => (
     <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50">
         <style>
@@ -64,6 +65,7 @@ const SplashScreen = () => (
     </div>
 );
 
+// CHORD RENDERER
 const HymnRenderer = ({ lyrics, transposeSteps }) => {
     const lines = lyrics.split('\n');
     return (
@@ -290,11 +292,11 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
         setShowAddSection(false);
     };
 
-    // --- BULLETPROOF NATIVE MOBILE EXPORT ---
+    // --- DOUBLE-FAILSAFE DOWNLOAD/SHARE LOGIC ---
     const handleShareOrDownload = async (fileData, filename, mimeType, isPDF) => {
         try {
             if (Capacitor.isNativePlatform()) {
-                // We are inside the Android APK! Ask native Android to save/share the file.
+                // Native Android APK
                 let base64Data;
                 if (isPDF) {
                     const reader = new FileReader();
@@ -305,72 +307,82 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
                 } else {
                     base64Data = fileData;
                 }
-
-                // Strip the web URL prefix to get raw data
                 const base64String = base64Data.split(',')[1];
-
-                // Write the file to Android's internal cache
                 const savedFile = await Filesystem.writeFile({
                     path: filename,
                     data: base64String,
                     directory: Directory.Cache
                 });
-
-                // Open the Android Share Sheet!
-                await Share.share({
-                    title: 'Bethsaida Program',
-                    url: savedFile.uri,
-                });
+                await Share.share({ title: 'Bethsaida Program', url: savedFile.uri });
             } else {
-                // We are on the Vercel Website!
+                // Vercel Web / iOS PWA
                 const blob = isPDF ? fileData : await (await fetch(fileData)).blob();
                 const file = new File([blob], filename, { type: mimeType });
                 
-                // If the browser supports web sharing (like Safari on iOS), pop it up
+                let shared = false;
+                
+                // Attempt Web Share (Works on iOS Safari if triggered correctly)
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: 'Bethsaida Program' });
-                    return;
+                    try {
+                        await navigator.share({ files: [file], title: 'Bethsaida Program' });
+                        shared = true;
+                    } catch (shareErr) {
+                        console.log("Native share failed/cancelled:", shareErr);
+                    }
                 }
                 
-                // Fallback for Windows/Mac desktop browsers (Standard download)
-                const link = document.createElement('a');
-                link.download = filename;
-                link.href = isPDF ? URL.createObjectURL(blob) : fileData;
-                link.click();
+                // Fallback: If share is blocked/fails, force standard browser download
+                if (!shared) {
+                    const link = document.createElement('a');
+                    link.download = filename;
+                    const objectUrl = URL.createObjectURL(blob);
+                    link.href = objectUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+                }
             }
         } catch (error) { 
-            console.error("Export Error: ", error); 
-            alert("Error exporting file. Please try again."); 
+            console.error("Download Error: ", error); 
+            alert("Export Error: " + (error.message || "Please try again.")); 
         }
     };
 
     const exportAsImage = async () => {
         setIsExporting(true);
-        setTimeout(async () => {
-            try {
-                const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fcfbf9' });
-                const imgData = canvas.toDataURL('image/png');
-                await handleShareOrDownload(imgData, 'Bethsaida-Program.png', 'image/png', false);
-            } catch (err) { console.error("Export Image failed:", err); alert("Failed to export image."); }
-            setIsExporting(false);
-        }, 800); 
+        // Delay uses await instead of setTimeout wrapping to preserve Safari async trust
+        await new Promise(resolve => setTimeout(resolve, 150)); 
+        
+        try {
+            const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fcfbf9' });
+            const imgData = canvas.toDataURL('image/png');
+            await handleShareOrDownload(imgData, 'Bethsaida-Program.png', 'image/png', false);
+        } catch (err) { 
+            console.error("Export Image failed:", err); 
+            alert("Failed to export: " + (err.message || "Unknown error")); 
+        }
+        setIsExporting(false);
     };
 
     const exportAsPDF = async () => {
         setIsExporting(true);
-        setTimeout(async () => {
-            try {
-                const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fcfbf9' });
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                const pdfBlob = pdf.output('blob');
-                await handleShareOrDownload(pdfBlob, 'Bethsaida-Program.pdf', 'application/pdf', true);
-            } catch (err) { console.error("Export PDF failed:", err); alert("Failed to generate PDF."); }
-            setIsExporting(false);
-        }, 800);
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        try {
+            const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fcfbf9' });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            const pdfBlob = pdf.output('blob');
+            await handleShareOrDownload(pdfBlob, 'Bethsaida-Program.pdf', 'application/pdf', true);
+        } catch (err) { 
+            console.error("Export PDF failed:", err); 
+            alert("Failed to generate PDF: " + (err.message || "Unknown error")); 
+        }
+        setIsExporting(false);
     };
 
     return (
