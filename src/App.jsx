@@ -3,6 +3,11 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { songsDB } from './songsDB'; 
 
+// NEW: Capacitor Native Plugins
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+
 // --- ICONS (Inline SVGs) ---
 const IconMusic = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>;
 const IconList = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>;
@@ -14,7 +19,6 @@ const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 
 const IconMessageSquare = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>;
 const IconSend = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>;
 const IconClose = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
-// NEW: Edit Icon
 const IconEdit = () => <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
 
 // --- TRANSPOSITION LOGIC ---
@@ -37,7 +41,6 @@ function transposeChord(chord, steps) {
 
 // --- COMPONENTS ---
 
-// SPLASH SCREEN
 const SplashScreen = () => (
     <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50">
         <style>
@@ -61,7 +64,6 @@ const SplashScreen = () => (
     </div>
 );
 
-// CHORD RENDERER
 const HymnRenderer = ({ lyrics, transposeSteps }) => {
     const lines = lyrics.split('\n');
     return (
@@ -98,13 +100,10 @@ const HymnRenderer = ({ lyrics, transposeSteps }) => {
 };
 
 const HymnLibrary = ({ 
-    addToProgram, activeProgramData, selectedHymn, setSelectedHymn, transpose, setTranspose, activeCategory, setActiveCategory,
-    customLyrics, setCustomLyrics // NEW: Custom Lyrics Props
+    addToProgram, activeProgramData, selectedHymn, setSelectedHymn, transpose, setTranspose, activeCategory, setActiveCategory, customLyrics, setCustomLyrics 
 }) => {
     const [search, setSearch] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
-    
-    // NEW: Editing State
     const [isEditing, setIsEditing] = useState(false);
     const [editDraft, setEditDraft] = useState('');
 
@@ -119,27 +118,13 @@ const HymnLibrary = ({
     };
 
     const assignableSections = activeProgramData.filter(s => s.type !== 'reading');
-
-    // Get the lyrics (Custom if exists, otherwise Original)
     const currentLyrics = selectedHymn ? (customLyrics[selectedHymn.id] || selectedHymn.lyrics) : '';
 
-    const startEditing = () => {
-        setEditDraft(currentLyrics);
-        setIsEditing(true);
-    };
-
-    const saveEdit = () => {
-        setCustomLyrics(prev => ({ ...prev, [selectedHymn.id]: editDraft }));
-        setIsEditing(false);
-    };
-
+    const startEditing = () => { setEditDraft(currentLyrics); setIsEditing(true); };
+    const saveEdit = () => { setCustomLyrics(prev => ({ ...prev, [selectedHymn.id]: editDraft })); setIsEditing(false); };
     const resetEdit = () => {
-        if(window.confirm("Are you sure you want to restore the original chords? Your custom edits will be lost.")) {
-            setCustomLyrics(prev => {
-                const next = { ...prev };
-                delete next[selectedHymn.id];
-                return next;
-            });
+        if(window.confirm("Restore the original chords? Custom edits will be lost.")) {
+            setCustomLyrics(prev => { const next = { ...prev }; delete next[selectedHymn.id]; return next; });
             setIsEditing(false);
         }
     };
@@ -188,10 +173,7 @@ const HymnLibrary = ({
                                 <div className="flex gap-2 w-full md:w-auto">
                                     {!isEditing && (
                                         <>
-                                            {/* NEW: Edit Button */}
-                                            <button onClick={startEditing} className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg flex items-center justify-center transition border border-slate-700">
-                                                <IconEdit />
-                                            </button>
+                                            <button onClick={startEditing} className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg flex items-center justify-center transition border border-slate-700"><IconEdit /></button>
                                             <div className="flex bg-slate-800 rounded-lg overflow-hidden border border-slate-700 flex-1 md:flex-none">
                                                 <button onClick={() => setTranspose(p => p - 1)} className="flex-1 md:flex-none px-3 py-1 hover:bg-slate-700 font-bold">-</button>
                                                 <div className="px-3 py-1 bg-slate-800 flex items-center justify-center text-sm font-medium border-x border-slate-700">Key: {transpose > 0 ? `+${transpose}` : transpose}</div>
@@ -215,19 +197,12 @@ const HymnLibrary = ({
                                             <span className="text-xs text-slate-400 normal-case font-normal hidden md:inline ml-2">(Wrap chords in [brackets])</span>
                                         </div>
                                         <div className="flex gap-2">
-                                            {customLyrics[selectedHymn.id] && (
-                                                <button onClick={resetEdit} className="px-3 py-1.5 text-red-500 hover:bg-red-50 rounded-lg font-bold text-xs md:text-sm transition">Reset</button>
-                                            )}
+                                            {customLyrics[selectedHymn.id] && <button onClick={resetEdit} className="px-3 py-1.5 text-red-500 hover:bg-red-50 rounded-lg font-bold text-xs md:text-sm transition">Reset</button>}
                                             <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 bg-slate-200 text-slate-700 hover:bg-slate-300 rounded-lg font-bold text-xs md:text-sm transition">Cancel</button>
                                             <button onClick={saveEdit} className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-lg font-bold text-xs md:text-sm shadow-sm transition">Save</button>
                                         </div>
                                     </div>
-                                    <textarea 
-                                        className="flex-1 w-full p-4 font-mono text-sm md:text-base border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none resize-none leading-relaxed shadow-inner bg-[#fcfbf9]" 
-                                        value={editDraft} 
-                                        onChange={e => setEditDraft(e.target.value)}
-                                        placeholder="Type your lyrics here...\nPut chords in brackets like this: [G]A-[C]men"
-                                    />
+                                    <textarea className="flex-1 w-full p-4 font-mono text-sm md:text-base border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none resize-none leading-relaxed shadow-inner bg-[#fcfbf9]" value={editDraft} onChange={e => setEditDraft(e.target.value)} placeholder="Type your lyrics here...\nPut chords in brackets like this: [G]A-[C]men" />
                                 </div>
                             ) : (
                                 <HymnRenderer lyrics={currentLyrics} transposeSteps={transpose} />
@@ -315,21 +290,58 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
         setShowAddSection(false);
     };
 
+    // --- BULLETPROOF NATIVE MOBILE EXPORT ---
     const handleShareOrDownload = async (fileData, filename, mimeType, isPDF) => {
         try {
-            const blob = isPDF ? fileData : await (await fetch(fileData)).blob();
-            const file = new File([blob], filename, { type: mimeType });
-            
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file], title: 'Bethsaida Program' });
-                return;
+            if (Capacitor.isNativePlatform()) {
+                // We are inside the Android APK! Ask native Android to save/share the file.
+                let base64Data;
+                if (isPDF) {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(fileData);
+                    base64Data = await new Promise((resolve) => {
+                        reader.onloadend = () => resolve(reader.result);
+                    });
+                } else {
+                    base64Data = fileData;
+                }
+
+                // Strip the web URL prefix to get raw data
+                const base64String = base64Data.split(',')[1];
+
+                // Write the file to Android's internal cache
+                const savedFile = await Filesystem.writeFile({
+                    path: filename,
+                    data: base64String,
+                    directory: Directory.Cache
+                });
+
+                // Open the Android Share Sheet!
+                await Share.share({
+                    title: 'Bethsaida Program',
+                    url: savedFile.uri,
+                });
+            } else {
+                // We are on the Vercel Website!
+                const blob = isPDF ? fileData : await (await fetch(fileData)).blob();
+                const file = new File([blob], filename, { type: mimeType });
+                
+                // If the browser supports web sharing (like Safari on iOS), pop it up
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'Bethsaida Program' });
+                    return;
+                }
+                
+                // Fallback for Windows/Mac desktop browsers (Standard download)
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = isPDF ? URL.createObjectURL(blob) : fileData;
+                link.click();
             }
-            
-            const link = document.createElement('a');
-            link.download = filename;
-            link.href = isPDF ? URL.createObjectURL(blob) : fileData;
-            link.click();
-        } catch (error) { console.error("Download Error: ", error); }
+        } catch (error) { 
+            console.error("Export Error: ", error); 
+            alert("Error exporting file. Please try again."); 
+        }
     };
 
     const exportAsImage = async () => {
@@ -339,7 +351,7 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
                 const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fcfbf9' });
                 const imgData = canvas.toDataURL('image/png');
                 await handleShareOrDownload(imgData, 'Bethsaida-Program.png', 'image/png', false);
-            } catch (err) { console.error("Export Image failed:", err); alert("Failed to export."); }
+            } catch (err) { console.error("Export Image failed:", err); alert("Failed to export image."); }
             setIsExporting(false);
         }, 800); 
     };
@@ -536,12 +548,10 @@ export default function App() {
     const [activeTab, setActiveTab] = useState('library');
     const [programType, setProgramType] = useState('sunday');
     
-    // Global Selection State
     const [selectedHymn, setSelectedHymn] = useState(null);
     const [transpose, setTranspose] = useState(0);
     const [activeCategory, setActiveCategory] = useState('Hymn');
 
-    // NEW: Persistent Local Storage for Custom Lyrics!
     const [customLyrics, setCustomLyrics] = useState(() => {
         try {
             const saved = localStorage.getItem('bethsaida_custom_lyrics');
