@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import { songsDB } from './songsDB'; 
 
@@ -41,7 +41,6 @@ function transposeChord(chord, steps) {
 
 // --- COMPONENTS ---
 
-// SPLASH SCREEN
 const SplashScreen = () => (
     <div className="fixed inset-0 bg-slate-900 flex flex-col items-center justify-center z-50">
         <style>
@@ -65,7 +64,6 @@ const SplashScreen = () => (
     </div>
 );
 
-// CHORD RENDERER
 const HymnRenderer = ({ lyrics, transposeSteps }) => {
     const lines = lyrics.split('\n');
     return (
@@ -292,11 +290,10 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
         setShowAddSection(false);
     };
 
-    // --- DOUBLE-FAILSAFE DOWNLOAD/SHARE LOGIC ---
+    // --- MODERN EXPORT & SHARE LOGIC ---
     const handleShareOrDownload = async (fileData, filename, mimeType, isPDF) => {
         try {
             if (Capacitor.isNativePlatform()) {
-                // Native Android APK
                 let base64Data;
                 if (isPDF) {
                     const reader = new FileReader();
@@ -315,23 +312,18 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
                 });
                 await Share.share({ title: 'Bethsaida Program', url: savedFile.uri });
             } else {
-                // Vercel Web / iOS PWA
                 const blob = isPDF ? fileData : await (await fetch(fileData)).blob();
                 const file = new File([blob], filename, { type: mimeType });
                 
                 let shared = false;
-                
-                // Attempt Web Share (Works on iOS Safari if triggered correctly)
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({ files: [file], title: 'Bethsaida Program' });
                         shared = true;
                     } catch (shareErr) {
-                        console.log("Native share failed/cancelled:", shareErr);
+                        console.log("Native share cancelled");
                     }
                 }
-                
-                // Fallback: If share is blocked/fails, force standard browser download
                 if (!shared) {
                     const link = document.createElement('a');
                     link.download = filename;
@@ -351,13 +343,12 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
 
     const exportAsImage = async () => {
         setIsExporting(true);
-        // Delay uses await instead of setTimeout wrapping to preserve Safari async trust
         await new Promise(resolve => setTimeout(resolve, 150)); 
         
         try {
-            const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fcfbf9' });
-            const imgData = canvas.toDataURL('image/png');
-            await handleShareOrDownload(imgData, 'Bethsaida-Program.png', 'image/png', false);
+            // NEW: Using modern html-to-image library
+            const dataUrl = await toPng(printRef.current, { backgroundColor: '#fcfbf9', pixelRatio: 2 });
+            await handleShareOrDownload(dataUrl, 'Bethsaida-Program.png', 'image/png', false);
         } catch (err) { 
             console.error("Export Image failed:", err); 
             alert("Failed to export: " + (err.message || "Unknown error")); 
@@ -370,12 +361,19 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
         await new Promise(resolve => setTimeout(resolve, 150));
 
         try {
-            const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fcfbf9' });
-            const imgData = canvas.toDataURL('image/png');
+            // NEW: Using modern html-to-image library
+            const dataUrl = await toPng(printRef.current, { backgroundColor: '#fcfbf9', pixelRatio: 2 });
+            
+            // Get proper dimensions
+            const node = printRef.current;
+            const width = node.offsetWidth;
+            const height = node.offsetHeight;
+
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            const pdfHeight = (height * pdfWidth) / width;
+            
+            pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
             const pdfBlob = pdf.output('blob');
             await handleShareOrDownload(pdfBlob, 'Bethsaida-Program.pdf', 'application/pdf', true);
         } catch (err) { 
