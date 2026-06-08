@@ -290,7 +290,6 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
         setShowAddSection(false);
     };
 
-    // --- MODERN EXPORT & SHARE LOGIC ---
     const handleShareOrDownload = async (fileData, filename, mimeType, isPDF) => {
         try {
             if (Capacitor.isNativePlatform()) {
@@ -314,7 +313,6 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
             } else {
                 const blob = isPDF ? fileData : await (await fetch(fileData)).blob();
                 const file = new File([blob], filename, { type: mimeType });
-                
                 let shared = false;
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
@@ -343,10 +341,10 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
 
     const exportAsImage = async () => {
         setIsExporting(true);
-        await new Promise(resolve => setTimeout(resolve, 150)); 
+        // Wait 300ms for the CSS Unroll magic to take effect!
+        await new Promise(resolve => setTimeout(resolve, 300)); 
         
         try {
-            // NEW: Using modern html-to-image library
             const dataUrl = await toPng(printRef.current, { backgroundColor: '#fcfbf9', pixelRatio: 2 });
             await handleShareOrDownload(dataUrl, 'Bethsaida-Program.png', 'image/png', false);
         } catch (err) { 
@@ -358,16 +356,15 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
 
     const exportAsPDF = async () => {
         setIsExporting(true);
-        await new Promise(resolve => setTimeout(resolve, 150));
+        // Wait 300ms for the CSS Unroll magic to take effect!
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         try {
-            // NEW: Using modern html-to-image library
-            const dataUrl = await toPng(printRef.current, { backgroundColor: '#fcfbf9', pixelRatio: 2 });
-            
-            // Get proper dimensions
             const node = printRef.current;
+            const dataUrl = await toPng(node, { backgroundColor: '#fcfbf9', pixelRatio: 2 });
+            
             const width = node.offsetWidth;
-            const height = node.offsetHeight;
+            const height = node.scrollHeight; // Grab the unrolled full height!
 
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -385,6 +382,18 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
 
     return (
         <div className="flex flex-col h-full overflow-y-auto relative">
+            
+            {/* CSS UNROLL MAGIC: This forces the app to expand to full height during export so nothing cuts off! */}
+            {isExporting && (
+                <style>{`
+                    html, body, #root, .h-screen, .h-full, .overflow-hidden, .overflow-y-auto {
+                        height: auto !important;
+                        min-height: max-content !important;
+                        overflow: visible !important;
+                    }
+                `}</style>
+            )}
+
             <div className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm shrink-0">
                 <div>
                     <h2 className="text-xl md:text-2xl font-bold text-slate-800 font-serif">Service Program</h2>
