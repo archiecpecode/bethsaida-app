@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { toPng } from 'html-to-image';
+import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { songsDB } from './songsDB'; 
 
@@ -290,6 +290,7 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
         setShowAddSection(false);
     };
 
+    // --- BULLETPROOF NATIVE MOBILE EXPORT ---
     const handleShareOrDownload = async (fileData, filename, mimeType, isPDF) => {
         try {
             if (Capacitor.isNativePlatform()) {
@@ -313,13 +314,14 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
             } else {
                 const blob = isPDF ? fileData : await (await fetch(fileData)).blob();
                 const file = new File([blob], filename, { type: mimeType });
+                
                 let shared = false;
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({ files: [file], title: 'Bethsaida Program' });
                         shared = true;
                     } catch (shareErr) {
-                        console.log("Native share cancelled");
+                        console.log("Native share failed/cancelled:", shareErr);
                     }
                 }
                 if (!shared) {
@@ -339,14 +341,15 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
         }
     };
 
+    // Reverted to html2canvas to guarantee CSS rendering on mobile
     const exportAsImage = async () => {
         setIsExporting(true);
-        // Wait 300ms for the CSS Unroll magic to take effect!
         await new Promise(resolve => setTimeout(resolve, 300)); 
         
         try {
-            const dataUrl = await toPng(printRef.current, { backgroundColor: '#fcfbf9', pixelRatio: 2 });
-            await handleShareOrDownload(dataUrl, 'Bethsaida-Program.png', 'image/png', false);
+            const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fcfbf9' });
+            const imgData = canvas.toDataURL('image/png');
+            await handleShareOrDownload(imgData, 'Bethsaida-Program.png', 'image/png', false);
         } catch (err) { 
             console.error("Export Image failed:", err); 
             alert("Failed to export: " + (err.message || "Unknown error")); 
@@ -356,21 +359,20 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
 
     const exportAsPDF = async () => {
         setIsExporting(true);
-        // Wait 300ms for the CSS Unroll magic to take effect!
         await new Promise(resolve => setTimeout(resolve, 300));
 
         try {
-            const node = printRef.current;
-            const dataUrl = await toPng(node, { backgroundColor: '#fcfbf9', pixelRatio: 2 });
+            const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fcfbf9' });
+            const imgData = canvas.toDataURL('image/png');
             
-            const width = node.offsetWidth;
-            const height = node.scrollHeight; // Grab the unrolled full height!
+            const width = canvas.width;
+            const height = canvas.height;
 
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (height * pdfWidth) / width;
             
-            pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             const pdfBlob = pdf.output('blob');
             await handleShareOrDownload(pdfBlob, 'Bethsaida-Program.pdf', 'application/pdf', true);
         } catch (err) { 
@@ -383,7 +385,7 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
     return (
         <div className="flex flex-col h-full overflow-y-auto relative">
             
-            {/* CSS UNROLL MAGIC: This forces the app to expand to full height during export so nothing cuts off! */}
+            {/* CSS UNROLL MAGIC */}
             {isExporting && (
                 <style>{`
                     html, body, #root, .h-screen, .h-full, .overflow-hidden, .overflow-y-auto {
@@ -410,12 +412,13 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
                 </div>
             </div>
 
-            <div ref={printRef} className="pb-12 p-4 md:p-8 paper-bg rounded-xl border border-slate-200 shadow-inner min-h-full bg-[#fcfbf9]">
+            {/* NEW: Hex Color Override Area to bypass the html2canvas oklch crash! */}
+            <div ref={printRef} className="pb-12 p-4 md:p-8 rounded-xl border border-[#e2e8f0] min-h-full bg-[#fcfbf9]">
                 {isExporting && (
-                    <div className="mb-8 text-center border-b-2 border-slate-200 pb-8">
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 font-serif tracking-tight">BETHSAIDA MUSIC TEAM</h1>
-                        <h2 className="text-xl md:text-2xl font-semibold text-amber-600 mt-2 font-serif">{programType === 'sunday' ? 'Sunday Service' : 'Prayer Meeting'} Program</h2>
-                        <p className="text-slate-500 mt-3 italic font-serif text-base md:text-lg">"Make a joyful noise unto the Lord."</p>
+                    <div className="mb-8 text-center border-b-2 border-[#e2e8f0] pb-8">
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] font-serif tracking-tight">BETHSAIDA MUSIC TEAM</h1>
+                        <h2 className="text-xl md:text-2xl font-semibold text-[#d97706] mt-2 font-serif">{programType === 'sunday' ? 'Sunday Service' : 'Prayer Meeting'} Program</h2>
+                        <p className="text-[#64748b] mt-3 italic font-serif text-base md:text-lg">"Make a joyful noise unto the Lord."</p>
                     </div>
                 )}
                 
@@ -423,14 +426,14 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
                     {currentProgram.map(section => {
                         if (section.type === 'reading') {
                             return (
-                                <div key={section.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-max">
-                                    <div className="bg-slate-50 px-5 py-3 border-b border-slate-200"><h3 className="font-semibold text-slate-800">{section.title}</h3></div>
+                                <div key={section.id} className="bg-[#ffffff] border border-[#e2e8f0] rounded-xl overflow-hidden h-max">
+                                    <div className="bg-[#f8fafc] px-5 py-3 border-b border-[#e2e8f0]"><h3 className="font-semibold text-[#1e293b]">{section.title}</h3></div>
                                     <div className="p-4 grid grid-cols-3 gap-2 md:gap-3">
                                         {['book', 'chapter', 'verse'].map(field => (
                                             <div key={field}>
-                                                <label className="block text-[10px] md:text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">{field}</label>
-                                                {isExporting ? <p className="font-serif text-base md:text-lg font-medium text-slate-800">{section[field] || '---'}</p> : 
-                                                    <input type="text" value={section[field]} onChange={(e) => handleReadingChange(section.id, field, e.target.value)} className="w-full px-2 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" />
+                                                <label className="block text-[10px] md:text-xs font-bold text-[#64748b] mb-1 uppercase tracking-wider">{field}</label>
+                                                {isExporting ? <p className="font-serif text-base md:text-lg font-medium text-[#1e293b]">{section[field] || '---'}</p> : 
+                                                    <input type="text" value={section[field]} onChange={(e) => handleReadingChange(section.id, field, e.target.value)} className="w-full px-2 py-2 border border-[#cbd5e1] rounded-md focus:outline-none text-sm text-[#1e293b] bg-[#ffffff]" />
                                                 }
                                             </div>
                                         ))}
@@ -440,25 +443,25 @@ const ProgramBuilder = ({ programs, setPrograms, programType, setProgramType, op
                         }
 
                         return (
-                            <div key={section.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-max">
-                                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-                                    <h3 className="font-semibold text-slate-800 text-sm md:text-base">{section.title}</h3>
-                                    {!isExporting && <button onClick={() => openSongInLibrary(null)} className="text-xs font-bold text-amber-600 hover:text-amber-800 flex items-center px-2 py-1 bg-amber-50 rounded-md"><IconPlus className="w-3 h-3 mr-1" /> <span className="hidden md:inline">Add Song</span></button>}
+                            <div key={section.id} className="bg-[#ffffff] border border-[#e2e8f0] rounded-xl overflow-hidden h-max">
+                                <div className="bg-[#f8fafc] px-4 py-3 border-b border-[#e2e8f0] flex justify-between items-center">
+                                    <h3 className="font-semibold text-[#1e293b] text-sm md:text-base">{section.title}</h3>
+                                    {!isExporting && <button onClick={() => openSongInLibrary(null)} className="text-xs font-bold text-[#d97706] flex items-center px-2 py-1 bg-[#fffbeb] rounded-md"><IconPlus className="w-3 h-3 mr-1" /> <span className="hidden md:inline">Add Song</span></button>}
                                 </div>
                                 <div className="p-3 md:p-4">
-                                    {section.items.length === 0 ? ( <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-xs md:text-sm">{isExporting ? "---" : "No hymn selected."}</div> ) : (
+                                    {section.items.length === 0 ? ( <div className="text-center py-6 border-2 border-dashed border-[#e2e8f0] rounded-lg text-[#94a3b8] text-xs md:text-sm">{isExporting ? "---" : "No hymn selected."}</div> ) : (
                                         <div className="space-y-3">
                                             {section.items.map((item, idx) => (
-                                                <div key={idx} onClick={() => !isExporting && openSongInLibrary(item)} className="flex justify-between items-center bg-slate-50 border border-slate-100 p-3 rounded-lg cursor-pointer hover:bg-amber-50 transition group">
+                                                <div key={idx} onClick={() => !isExporting && openSongInLibrary(item)} className="flex justify-between items-center bg-[#f8fafc] border border-[#f1f5f9] p-3 rounded-lg cursor-pointer transition">
                                                     <div>
-                                                        <p className="font-bold text-slate-900 font-serif text-base md:text-lg group-hover:text-amber-700 transition">
+                                                        <p className="font-bold text-[#0f172a] font-serif text-base md:text-lg transition">
                                                             {item.title} 
-                                                            {customLyrics[item.id] && <span className="ml-2 text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded uppercase font-sans">Edited</span>}
-                                                            {item.transpose !== 0 && <span className="text-xs font-sans text-amber-600 font-normal ml-2">(Key: {item.transpose > 0 ? `+${item.transpose}` : item.transpose})</span>}
+                                                            {customLyrics[item.id] && <span className="ml-2 text-[10px] bg-[#fde68a] text-[#92400e] px-1.5 py-0.5 rounded uppercase font-sans">Edited</span>}
+                                                            {item.transpose !== 0 && <span className="text-xs font-sans text-[#d97706] font-normal ml-2">(Key: {item.transpose > 0 ? `+${item.transpose}` : item.transpose})</span>}
                                                         </p>
-                                                        <p className="text-xs text-slate-500">By {item.author}</p>
+                                                        <p className="text-xs text-[#64748b]">By {item.author}</p>
                                                     </div>
-                                                    {!isExporting && <button onClick={(e) => { e.stopPropagation(); handleRemove(section.id, idx); }} className="p-2 text-red-500 hover:bg-red-100 bg-white rounded-md transition shadow-sm"><IconTrash className="w-4 h-4" /></button>}
+                                                    {!isExporting && <button onClick={(e) => { e.stopPropagation(); handleRemove(section.id, idx); }} className="p-2 text-[#ef4444] bg-[#ffffff] rounded-md transition border border-[#f1f5f9]"><IconTrash className="w-4 h-4" /></button>}
                                                 </div>
                                             ))}
                                         </div>
